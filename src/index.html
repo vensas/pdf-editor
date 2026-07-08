@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="PDF Editor by vensas GmbH — edit, split, merge, and annotate PDFs entirely in your browser. No upload, no server: your files never leave your machine."
+    />
+    <title>PDF Editor · vensas GmbH</title>
+    <script>
+      // Apply a manually chosen theme before first paint to avoid flashing.
+      try {
+        var storedTheme = localStorage.getItem('theme');
+        if (storedTheme === 'light' || storedTheme === 'dark') {
+          document.documentElement.dataset.theme = storedTheme;
+        }
+      } catch (ignored) {}
+    </script>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="vensas GmbH" />
+    <meta property="og:title" content="PDF Editor · vensas GmbH" />
+    <meta
+      property="og:description"
+      content="Edit, split, merge, and annotate PDFs entirely in your browser. No upload, no server — your files never leave your machine."
+    />
+    <meta property="og:url" content="https://vensas.github.io/pdf-editor/" />
+    <meta property="og:image" content="https://vensas.github.io/pdf-editor/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A PDF being edited in the browser" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PDF Editor · vensas GmbH" />
+    <meta
+      name="twitter:description"
+      content="Edit, split, merge, and annotate PDFs entirely in your browser. No upload, no server — your files never leave your machine."
+    />
+    <meta name="twitter:image" content="https://vensas.github.io/pdf-editor/og-image.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
