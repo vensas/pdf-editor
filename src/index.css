@@ -397,16 +397,6 @@ button:disabled {
   padding-left: 0.9rem;
 }
 
-.toolbar-label {
-  font-size: 0.62rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  padding-right: 0.15rem;
-  user-select: none;
-}
-
 .toolbar-end {
   margin-left: auto;
 }
@@ -450,13 +440,6 @@ button:disabled {
 .tool-button:hover:not(:disabled) {
   border-color: var(--accent-strong);
   color: var(--accent-strong);
-}
-
-.tool-button.is-on {
-  background: color-mix(in srgb, var(--accent) 20%, var(--card));
-  border-color: var(--accent-strong);
-  color: var(--accent-strong);
-  font-weight: 600;
 }
 
 .tool-button.is-primary {

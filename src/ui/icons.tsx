@@ -44,6 +44,8 @@ const PATHS = {
     'M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-10-3h10v7H7v-7Z',
   blankPage: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6',
   editText: 'M4 7V5h11v2M9 5v13m-2 0h4M14 21l6-6-2-2-6 6-.5 2.5 2.5-.5Z',
+  eraser:
+    'M8 20H21M5.5 14.5 12 8l5 5-4.5 4.5a2 2 0 0 1-2.8 0l-1.9-1.9a2 2 0 0 1 0-2.8ZM12 8l3-3 5 5-3 3',
 } as const;
 
 export type IconName = keyof typeof PATHS;

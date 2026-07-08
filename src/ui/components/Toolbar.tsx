@@ -34,23 +34,13 @@ export interface ToolbarProps {
   onShortcuts(): void;
 }
 
-interface ToolSpec {
-  tool: Tool;
-  icon: IconName;
-  label: string;
-  key: string;
-}
-
-/** Tools that change the document's text content. */
-const TEXT_TOOLS: ToolSpec[] = [
-  { tool: 'text', icon: 'text', label: 'Add text', key: 'T' },
+const TOOLS: { tool: Tool; icon: IconName; label: string; key: string }[] = [
+  { tool: 'select', icon: 'cursor', label: 'Select', key: 'V' },
   { tool: 'edit-text', icon: 'editText', label: 'Edit text', key: 'E' },
-];
-
-/** Tools that mark up the page without changing its text. */
-const MARKUP_TOOLS: ToolSpec[] = [
-  { tool: 'highlight', icon: 'highlighter', label: 'Highlight', key: 'H' },
+  { tool: 'erase', icon: 'eraser', label: 'Erase area', key: 'X' },
+  { tool: 'text', icon: 'text', label: 'Text', key: 'T' },
   { tool: 'ink', icon: 'pen', label: 'Draw', key: 'P' },
+  { tool: 'highlight', icon: 'highlighter', label: 'Highlight', key: 'H' },
   { tool: 'rectangle', icon: 'square', label: 'Rectangle', key: 'R' },
   { tool: 'ellipse', icon: 'circle', label: 'Ellipse', key: 'O' },
   { tool: 'line', icon: 'line', label: 'Line', key: 'L' },
@@ -153,44 +143,14 @@ export function Toolbar({
         </button>
       </div>
 
-      <div className="toolbar-group" aria-label="Mode">
-        <button
-          type="button"
-          className={`icon-button ${tool === 'select' ? 'is-on' : ''}`}
-          aria-pressed={tool === 'select'}
-          aria-label="Select tool"
-          title="Select (V)"
-          onClick={() => setTool('select')}
-        >
-          <Icon name="cursor" />
-        </button>
-      </div>
-
-      <div className="toolbar-group" aria-label="Text">
-        <span className="toolbar-label">Text</span>
-        {TEXT_TOOLS.map((entry) => (
-          <button
-            key={entry.tool}
-            type="button"
-            className={`tool-button ${tool === entry.tool ? 'is-on' : ''}`}
-            aria-pressed={tool === entry.tool}
-            title={`${entry.label} (${entry.key})`}
-            onClick={() => setTool(entry.tool)}
-          >
-            <Icon name={entry.icon} />
-            <span>{entry.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="toolbar-group" aria-label="Annotate">
-        <span className="toolbar-label">Annotate</span>
-        {MARKUP_TOOLS.map((entry) => (
+      <div className="toolbar-group" role="radiogroup" aria-label="Annotation tools">
+        {TOOLS.map((entry) => (
           <button
             key={entry.tool}
             type="button"
             className={`icon-button ${tool === entry.tool ? 'is-on' : ''}`}
-            aria-pressed={tool === entry.tool}
+            role="radio"
+            aria-checked={tool === entry.tool}
             aria-label={`${entry.label} tool`}
             title={`${entry.label} (${entry.key})`}
             onClick={() => setTool(entry.tool)}

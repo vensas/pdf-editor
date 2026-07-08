@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.5.0 — 2026-07-08
+
+- Reverted the 2.4.1 toolbar split back to the single tool group
+- New "Erase area" tool (shortcut X): drag over any existing content — text,
+  image, or graphic — to cover it in the sampled page background. It reuses
+  the cover primitive, so an erased area is movable, resizable, recolorable
+  (cover color in the properties panel), and undoable. Note: this visually
+  covers content but does not securely remove it from the file
+- Existing text remains selectable/editable/removable via the Edit-text tool
+  (click a run to edit its words; clear it to blank the original)
+
 ## 2.4.1 — 2026-07-08
 
 - Toolbar reorganized into clearer groups: a labeled **Text** group (Add text,

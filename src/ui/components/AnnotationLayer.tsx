@@ -160,6 +160,24 @@ export function AnnotationLayer({
 
       if (rect.width < MIN_DRAG || rect.height < MIN_DRAG) return;
 
+      if (draftTool === 'erase') {
+        // Erase = cover the region with the sampled page background. Reuses
+        // the text-edit primitive (empty text bakes as cover-only), so it is
+        // movable, resizable, recolorable, and undoable like any annotation.
+        addAnnotation({
+          kind: 'text-edit',
+          id,
+          pageId: page.id,
+          rect,
+          text: '',
+          originalText: '',
+          fontSize: DEFAULT_FONT_SIZE,
+          color: '#1a2030',
+          background: sampleBackground(rect),
+        });
+        return;
+      }
+
       if (draftTool === 'highlight') {
         addAnnotation({ kind: 'highlight', id, pageId: page.id, rect, color, opacity: 0.45 });
       } else if (draftTool === 'rectangle' || draftTool === 'ellipse') {
@@ -174,7 +192,7 @@ export function AnnotationLayer({
         });
       }
     },
-    [addAnnotation, page.id],
+    [addAnnotation, page.id, sampleBackground],
   );
 
   // --- Edit existing text (edit-text tool) -----------------------------------
@@ -238,7 +256,7 @@ export function AnnotationLayer({
 
       // Suppress native drag/text-selection side effects while drawing.
       event.preventDefault();
-      (event.currentTarget as Element).setPointerCapture(event.pointerId);
+      capturePointer(event.currentTarget as Element, event.pointerId);
       setDraft({ tool, start: point, current: point, points: [point] });
     },
     [tool, toDisplay, setActiveAnnotation, addAnnotation, page.id, displayWidth, displayHeight],
@@ -293,7 +311,7 @@ export function AnnotationLayer({
       if (tool !== 'select' || event.button !== 0) return;
       event.stopPropagation();
       setActiveAnnotation(annotation.id);
-      (svgRef.current as SVGSVGElement | null)?.setPointerCapture(event.pointerId);
+      capturePointer(svgRef.current, event.pointerId);
       interaction.current = {
         mode: 'move',
         id: annotation.id,
@@ -310,7 +328,7 @@ export function AnnotationLayer({
     (event: React.PointerEvent, annotation: Annotation, corner: Corner) => {
       if (event.button !== 0) return;
       event.stopPropagation();
-      (svgRef.current as SVGSVGElement | null)?.setPointerCapture(event.pointerId);
+      capturePointer(svgRef.current, event.pointerId);
       interaction.current = {
         mode: 'resize',
         id: annotation.id,
@@ -724,6 +742,19 @@ function DraftShape({ draft }: { draft: Draft }): JSX.Element | null {
       );
     case 'highlight':
       return <rect {...rect} fill={color} opacity={0.45} style={{ mixBlendMode: 'multiply' }} />;
+    case 'erase':
+      // The real cover color is sampled on release; preview with a neutral
+      // dashed box so the user sees the region being wiped.
+      return (
+        <rect
+          {...rect}
+          fill="#ffffff"
+          fillOpacity={0.75}
+          stroke="#66646f"
+          strokeWidth={1}
+          strokeDasharray="4 3"
+        />
+      );
     case 'rectangle':
       return <rect {...rect} fill="none" stroke={color} strokeWidth={DEFAULT_STROKE} />;
     case 'ellipse':
@@ -808,6 +839,17 @@ function activeDocSnapshot(): DocSnapshot {
 }
 
 // --- Pure helpers ----------------------------------------------------------------
+
+/** Captures the pointer where supported (jsdom/SVG in tests may lack it). */
+function capturePointer(element: Element | null, pointerId: number): void {
+  if (element && typeof element.setPointerCapture === 'function') {
+    try {
+      element.setPointerCapture(pointerId);
+    } catch {
+      // Ignore: capture is a best-effort UX nicety, not required for drawing.
+    }
+  }
+}
 
 function pathData(points: readonly Point[]): string {
   if (points.length === 0) return '';
