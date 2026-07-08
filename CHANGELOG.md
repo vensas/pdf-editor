@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.3 — 2026-07-08
+
+- Fixed the text tool: clicking a page created the text box, but the
+  browser's own click-focus handling immediately blurred the inline editor,
+  and the empty box was cleaned up before you could type — it looked like
+  nothing happened. The click's default focus behavior is now suppressed
+  and the editor re-focuses itself after the click settles
+
 ## 2.2.2 — 2026-07-08
 
 - Dependencies updated across the board: pdf.js 6, Rsbuild 2, TypeScript 6,

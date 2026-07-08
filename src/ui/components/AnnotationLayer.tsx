@@ -6,7 +6,7 @@
  * does the zoom scaling, so pointer coordinates only need one division.
  */
 
-import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { denormalizeInkPath, lineEndpoints, normalizeInkPaths } from '../../pdf-core/annotations';
 import { clampRectToPage } from '../../pdf-core/geometry';
 import {
@@ -71,6 +71,7 @@ export function AnnotationLayer({
   zoom,
 }: AnnotationLayerProps): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
+  const textEditorRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const interaction = useRef<Interaction | null>(null);
@@ -179,6 +180,10 @@ export function AnnotationLayer({
       const point = toDisplay(event);
 
       if (tool === 'text') {
+        // Prevent the pointerdown's default focus handling: it would run
+        // AFTER the editor textarea mounts and auto-focuses, blur it, and
+        // the empty-text cleanup would instantly delete the new annotation.
+        event.preventDefault();
         const height = textBoxHeight(DEFAULT_FONT_SIZE, 1);
         const rect = clampRectToPage(
           { x: point.x, y: point.y, width: 220, height },
@@ -200,6 +205,8 @@ export function AnnotationLayer({
         return;
       }
 
+      // Suppress native drag/text-selection side effects while drawing.
+      event.preventDefault();
       (event.currentTarget as Element).setPointerCapture(event.pointerId);
       setDraft({ tool, start: point, current: point, points: [point] });
     },
@@ -310,6 +317,14 @@ export function AnnotationLayer({
   // A stale editingTextId (annotation deleted while editing) is harmless: the
   // textarea only renders while a matching annotation exists.
 
+  // Focus the inline editor once the browser has finished the click's own
+  // focus handling — autoFocus alone can be blurred right back by it.
+  useEffect(() => {
+    if (!editingTextId) return undefined;
+    const raf = requestAnimationFrame(() => textEditorRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, [editingTextId]);
+
   const activeAnnotation = annotations.find((a) => a.id === activeAnnotationId);
 
   return (
@@ -363,6 +378,7 @@ export function AnnotationLayer({
 
       {editingAnnotation && (
         <textarea
+          ref={textEditorRef}
           className="text-annotation-editor"
           value={editingAnnotation.text}
           placeholder="Type here…"
