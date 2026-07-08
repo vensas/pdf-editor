@@ -6,7 +6,7 @@
  * does the zoom scaling, so pointer coordinates only need one division.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
 import { denormalizeInkPath, lineEndpoints, normalizeInkPaths } from '../../pdf-core/annotations';
 import { clampRectToPage } from '../../pdf-core/geometry';
 import {
@@ -307,9 +307,8 @@ export function AnnotationLayer({
     if (before) commitSnapshot(before);
   }, [editingAnnotation, commitSnapshot]);
 
-  useEffect(() => {
-    if (editingTextId && !editingAnnotation) setEditingTextId(null);
-  }, [editingTextId, editingAnnotation]);
+  // A stale editingTextId (annotation deleted while editing) is harmless: the
+  // textarea only renders while a matching annotation exists.
 
   const activeAnnotation = annotations.find((a) => a.id === activeAnnotationId);
 

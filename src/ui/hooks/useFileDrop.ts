@@ -9,7 +9,10 @@ export function useFileDrop(onFiles: (files: File[]) => void): boolean {
   const [dragging, setDragging] = useState(false);
   const depth = useRef(0);
   const handler = useRef(onFiles);
-  handler.current = onFiles;
+  // Keep the latest callback without re-subscribing the window listeners.
+  useEffect(() => {
+    handler.current = onFiles;
+  });
 
   useEffect(() => {
     const hasFiles = (event: DragEvent): boolean =>
