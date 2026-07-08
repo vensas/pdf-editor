@@ -16,7 +16,7 @@ export interface ShortcutHandlers {
 const TOOL_KEYS: Record<string, Tool> = {
   v: 'select',
   e: 'edit-text',
-  x: 'erase',
+  x: 'remove-object',
   t: 'text',
   p: 'ink',
   h: 'highlight',

@@ -10,6 +10,8 @@ import {
 } from '../../src/editor-state/store';
 import type { SourceEntry } from '../../src/editor-state/types';
 import { renderService } from '../../src/rendering/render-service';
+import * as objectDetect from '../../src/services/object-detect';
+import type { DetectedObject } from '../../src/services/object-detect';
 import { AnnotationLayer } from '../../src/ui/components/AnnotationLayer';
 
 function makeSource(id: string, pageCount: number): SourceEntry {
@@ -181,38 +183,30 @@ describe('AnnotationLayer edit-text tool', () => {
   });
 });
 
-describe('AnnotationLayer erase tool', () => {
-  it('drag-covers a region with the sampled background (empty text-edit)', () => {
+describe('AnnotationLayer remove-object tool', () => {
+  const objects: DetectedObject[] = [
+    { id: '0:0', label: 'Image', rect: { x: 347, y: 58, width: 190, height: 58 } },
+  ];
+
+  it('shows object hotspots and marks a clicked object for removal', async () => {
+    vi.spyOn(objectDetect, 'detectObjects').mockResolvedValue(objects);
     const page = setupPage();
     const svg = renderLayer(page);
-    act(() => store().setTool('erase'));
+    act(() => store().setTool('remove-object'));
 
-    // Drag a rectangle to erase.
-    fireEvent.pointerDown(svg, { button: 0, clientX: 50, clientY: 50 });
-    fireEvent.pointerMove(svg, { clientX: 200, clientY: 120 });
-    fireEvent.pointerUp(svg);
+    const hotspot = await waitFor(() => {
+      const el = svg.querySelector('.object-hotspot');
+      if (!el) throw new Error('no hotspot yet');
+      return el;
+    });
+    fireEvent.pointerDown(hotspot, { button: 0 });
 
     const created = Object.values(activeDoc().doc.annotations);
     expect(created).toHaveLength(1);
-    const cover = created[0]!;
-    expect(cover.kind).toBe('text-edit');
-    expect((cover as { text: string }).text).toBe('');
-    expect((cover as { originalText: string }).originalText).toBe('');
-    // Cover color from the sampleBackground harness (#ffffff).
-    expect((cover as { background: string }).background).toBe('#ffffff');
-    // No inline editor opens for an erase.
+    expect(created[0]!.kind).toBe('object-removal');
+    expect((created[0] as { label: string }).label).toBe('Image');
+    expect(created[0]!.rect).toEqual({ x: 347, y: 58, width: 190, height: 58 });
+    // No inline editor for a removal.
     expect(screen.queryByPlaceholderText(/type here/i)).not.toBeInTheDocument();
-  });
-
-  it('ignores a too-small erase drag', () => {
-    const page = setupPage();
-    const svg = renderLayer(page);
-    act(() => store().setTool('erase'));
-
-    fireEvent.pointerDown(svg, { button: 0, clientX: 50, clientY: 50 });
-    fireEvent.pointerMove(svg, { clientX: 52, clientY: 52 });
-    fireEvent.pointerUp(svg);
-
-    expect(Object.values(activeDoc().doc.annotations)).toHaveLength(0);
   });
 });

@@ -112,6 +112,18 @@ export interface HighlightAnnotation extends AnnotationBase {
   opacity: number;
 }
 
+/**
+ * Marks an existing page object (an image or form XObject drawn on the page)
+ * for true removal: at export the matching draw operator is deleted from the
+ * page's content stream, so the object is gone from the output — not covered.
+ * `rect` is the object's bounding box in display space (used to match the draw
+ * operator by placement); `label` describes it for the UI.
+ */
+export interface ObjectRemovalAnnotation extends AnnotationBase {
+  kind: 'object-removal';
+  label: string;
+}
+
 export type ShapeKind = 'rectangle' | 'ellipse' | 'line' | 'arrow';
 
 export interface ShapeAnnotation extends AnnotationBase {
@@ -131,6 +143,7 @@ export interface ShapeAnnotation extends AnnotationBase {
 export type Annotation =
   | TextAnnotation
   | TextEditAnnotation
+  | ObjectRemovalAnnotation
   | InkAnnotation
   | ImageAnnotation
   | HighlightAnnotation

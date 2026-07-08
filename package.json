@@ -1,6 +1,6 @@
 {
   "name": "pdf-editor",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Edit, split, merge, and annotate PDFs entirely in your browser. No upload, no server — your files never leave your machine.",
   "type": "module",
   "private": true,

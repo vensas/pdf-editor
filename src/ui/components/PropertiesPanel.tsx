@@ -26,6 +26,7 @@ export function PropertiesPanel(): JSX.Element {
 const KIND_LABELS: Record<Annotation['kind'], string> = {
   text: 'Text',
   'text-edit': 'Edited text',
+  'object-removal': 'Removed object',
   ink: 'Freehand drawing',
   image: 'Image',
   highlight: 'Highlight',
@@ -179,11 +180,12 @@ function AnnotationProperties({ annotation }: { annotation: Annotation }): JSX.E
         onClick={() => deleteAnnotation(annotation.id)}
       >
         <Icon name="trash" />
-        <span>Delete annotation</span>
+        <span>{annotation.kind === 'object-removal' ? 'Keep object' : 'Delete annotation'}</span>
       </button>
       <p className="muted small">
-        Annotations are flattened into the PDF when you export. Move or resize them on the page;
-        double-click text to edit it inline.
+        {annotation.kind === 'object-removal'
+          ? 'This object is deleted from the PDF content when you export or print. Deleting this marker keeps the object.'
+          : 'Annotations are flattened into the PDF when you export. Move or resize them on the page; double-click text to edit it inline.'}
       </p>
     </div>
   );

@@ -100,6 +100,28 @@ export function displayRectToPdf(
   return { x, y, width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) };
 }
 
+/**
+ * Maps an axis-aligned PDF user-space rect back to display space — the
+ * inverse of displayRectToPdf, used to place detected page objects on screen.
+ */
+export function pdfRectToDisplay(
+  rect: Rect,
+  pageWidth: number,
+  pageHeight: number,
+  rotation: Rotation,
+): Rect {
+  const a = pdfToDisplayPoint({ x: rect.x, y: rect.y }, pageWidth, pageHeight, rotation);
+  const b = pdfToDisplayPoint(
+    { x: rect.x + rect.width, y: rect.y + rect.height },
+    pageWidth,
+    pageHeight,
+    rotation,
+  );
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) };
+}
+
 /** Clamps a rect to the displayed page bounds, preserving size where possible. */
 export function clampRectToPage(rect: Rect, displayWidth: number, displayHeight: number): Rect {
   const width = Math.min(rect.width, displayWidth);

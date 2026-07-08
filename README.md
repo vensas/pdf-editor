@@ -50,9 +50,9 @@ No uploads. No accounts. No tracking. No analytics. A static page on GitHub Page
 - ✏️ **Edit existing text** — pick a real text run on the page and change the
   words; the original is covered in the sampled background color and the new
   text is baked in (in-place edit, no reflow — see limitations)
-- 🩹 **Erase area** — drag over anything (text, image, graphic) to cover it in
-  the sampled page background; visually removes existing content (see the
-  redaction note in limitations)
+- 🗑️ **Remove object** — detects the page's images and graphics (form
+  XObjects); click one to truly delete it from the PDF on export by removing
+  its draw operator from the content stream (not a cover — the object is gone)
 - 📝 Text boxes with inline editing, font size, and color
 - ✍️ Signatures — draw with mouse/touch/pen or upload an image
 - 🖼️ Image/stamp placement (PNG/JPEG)
@@ -157,11 +157,12 @@ minor/patch updates grouped, `vitest`/`@vitest/*` always bumped together).
   would add megabytes to the bundle.
 - **Annotations are flattened.** Exported annotations become regular page content,
   not editable PDF annotation objects.
-- **Erase/edit covers, it does not securely redact.** Erasing an area or
-  clearing edited text hides content by drawing a background-colored box over
-  it; the original bytes remain in the exported PDF and could still be
-  extracted. Do not rely on it to remove confidential information — that needs
-  true content-stream removal (a future step).
+- **Object removal covers image/form XObjects, not raw vector paths.** Remove
+  object detects and deletes objects drawn via a `Do` operator (embedded
+  images and form XObjects — the common "logo" case) by removing that operator
+  from the page content stream. Content drawn as inline vector paths or inline
+  images is not yet detected. Editing/clearing existing _text_ still covers
+  rather than removes, so it is not secure redaction for text.
 - **Text editing is in-place, not reflowing.** Editing existing text detects
   the real text runs (via pdf.js), covers the original in the sampled
   background color, and draws the replacement on top. It works best for

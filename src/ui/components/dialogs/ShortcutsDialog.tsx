@@ -36,7 +36,7 @@ const GROUPS: { title: string; shortcuts: [string, string][] }[] = [
     shortcuts: [
       ['V', 'Select'],
       ['E', 'Edit existing text'],
-      ['X', 'Erase area (cover)'],
+      ['X', 'Remove object (image/graphic)'],
       ['T', 'Text'],
       ['P', 'Draw (pen)'],
       ['H', 'Highlight'],

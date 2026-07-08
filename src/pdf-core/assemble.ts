@@ -23,6 +23,7 @@ import {
 import { denormalizeInkPath, lineEndpoints } from './annotations';
 import { classifyPdfError, PdfError } from './errors';
 import { displayToPdfPoint, displayRectToPdf, normalizeRotation } from './geometry';
+import { removePageObjects } from './page-xobjects';
 import { TEXT_ASCENT_FACTOR, TEXT_PADDING, textLineHeight } from './text-metrics';
 import type {
   Annotation,
@@ -96,7 +97,17 @@ export async function assembleDocuments(
       const total = normalizeRotation(inherent + item.rotation);
       page.setRotation(degrees(total));
 
+      // Object removals edit the page content stream (true removal); do them
+      // before drawing so a removed logo can't sit above a new annotation.
+      const removals = item.annotations.filter((a) => a.kind === 'object-removal');
+      if (removals.length > 0) {
+        const { width: pageWidth, height: pageHeight } = page.getSize();
+        const targets = removals.map((r) => displayRectToPdf(r.rect, pageWidth, pageHeight, total));
+        removePageObjects(page, targets);
+      }
+
       for (const annotation of item.annotations) {
+        if (annotation.kind === 'object-removal') continue;
         await bakeAnnotation(page, annotation, total, resources);
       }
 
@@ -326,6 +337,10 @@ async function bakeAnnotation(
 
     case 'text-edit':
       return bakeTextEdit(page, annotation, rotation, toPdf, rectToPdf, resources);
+
+    case 'object-removal':
+      // Applied as a content-stream edit before drawing, not drawn here.
+      return;
   }
 }
 

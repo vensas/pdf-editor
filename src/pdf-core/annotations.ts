@@ -185,6 +185,12 @@ export function parseAnnotation(value: unknown): Annotation {
         color: parseColor(value['color'], 'color'),
       };
     }
+    case 'object-removal': {
+      if (typeof value['label'] !== 'string') {
+        throw new Error('Object-removal annotation is malformed.');
+      }
+      return { kind: 'object-removal', id, pageId, rect, label: value['label'] };
+    }
     case 'image': {
       if (typeof value['assetId'] !== 'string') {
         throw new Error('Image annotation is malformed.');

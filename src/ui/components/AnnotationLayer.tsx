@@ -21,6 +21,7 @@ import { selectActiveDocument, useEditorStore } from '../../editor-state/store';
 import { EMPTY_DOC } from '../../editor-state/types';
 import type { DocSnapshot, Tool } from '../../editor-state/types';
 import { renderService } from '../../rendering/render-service';
+import { detectObjects, type DetectedObject } from '../../services/object-detect';
 import { useActiveDoc } from '../hooks/useActiveDoc';
 import { assetUrl } from '../asset-urls';
 
@@ -160,24 +161,6 @@ export function AnnotationLayer({
 
       if (rect.width < MIN_DRAG || rect.height < MIN_DRAG) return;
 
-      if (draftTool === 'erase') {
-        // Erase = cover the region with the sampled page background. Reuses
-        // the text-edit primitive (empty text bakes as cover-only), so it is
-        // movable, resizable, recolorable, and undoable like any annotation.
-        addAnnotation({
-          kind: 'text-edit',
-          id,
-          pageId: page.id,
-          rect,
-          text: '',
-          originalText: '',
-          fontSize: DEFAULT_FONT_SIZE,
-          color: '#1a2030',
-          background: sampleBackground(rect),
-        });
-        return;
-      }
-
       if (draftTool === 'highlight') {
         addAnnotation({ kind: 'highlight', id, pageId: page.id, rect, color, opacity: 0.45 });
       } else if (draftTool === 'rectangle' || draftTool === 'ellipse') {
@@ -192,7 +175,20 @@ export function AnnotationLayer({
         });
       }
     },
-    [addAnnotation, page.id, sampleBackground],
+    [addAnnotation, page.id],
+  );
+
+  const startObjectRemoval = useCallback(
+    (object: { rect: Rect; label: string }) => {
+      addAnnotation({
+        kind: 'object-removal',
+        id: crypto.randomUUID(),
+        pageId: page.id,
+        rect: object.rect,
+        label: object.label,
+      });
+    },
+    [addAnnotation, page.id],
   );
 
   // --- Edit existing text (edit-text tool) -----------------------------------
@@ -224,8 +220,9 @@ export function AnnotationLayer({
         setActiveAnnotation(null);
         return;
       }
-      // image = placed via the toolbar picker; edit-text = via run hotspots.
-      if (tool === 'image' || tool === 'edit-text') return;
+      // These tools act via pickers/hotspots, not by drawing on the page:
+      // image (toolbar picker), edit-text and remove-object (hotspots).
+      if (tool === 'image' || tool === 'edit-text' || tool === 'remove-object') return;
       const point = toDisplay(event);
 
       if (tool === 'text') {
@@ -419,10 +416,19 @@ export function AnnotationLayer({
 
         {tool === 'edit-text' && (
           <TextRunHotspots
-            key={`${page.id}:${page.rotation}`}
+            key={`text:${page.id}:${page.rotation}`}
             page={page}
             displayHeight={displayHeight}
             onPick={startTextEdit}
+          />
+        )}
+
+        {tool === 'remove-object' && (
+          <ObjectHotspots
+            key={`obj:${page.id}:${page.rotation}`}
+            page={page}
+            displayHeight={displayHeight}
+            onPick={startObjectRemoval}
           />
         )}
 
@@ -584,6 +590,39 @@ function AnnotationShape({
           ))}
         </g>
       );
+    case 'object-removal':
+      // A marker for content that will be deleted from the PDF on export.
+      return (
+        <g className="object-removal-marker">
+          <rect
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            fill="#c2372e"
+            fillOpacity={0.12}
+            stroke="#c2372e"
+            strokeWidth={1.2}
+            strokeDasharray="5 3"
+          />
+          <line
+            x1={rect.x}
+            y1={rect.y}
+            x2={rect.x + rect.width}
+            y2={rect.y + rect.height}
+            stroke="#c2372e"
+            strokeWidth={1}
+          />
+          <line
+            x1={rect.x + rect.width}
+            y1={rect.y}
+            x2={rect.x}
+            y2={rect.y + rect.height}
+            stroke="#c2372e"
+            strokeWidth={1}
+          />
+        </g>
+      );
     case 'image': {
       const asset = assets[annotation.assetId];
       if (!asset) return null;
@@ -719,6 +758,63 @@ function TextRunHotspots({
   );
 }
 
+/**
+ * Clickable overlay of the page's removable objects (image / form XObjects),
+ * shown while the remove-object tool is active. Clicking one marks it for
+ * true removal from the PDF on export.
+ */
+function ObjectHotspots({
+  page,
+  displayHeight,
+  onPick,
+}: {
+  page: PageRef;
+  displayHeight: number;
+  onPick: (object: { rect: Rect; label: string }) => void;
+}): JSX.Element | null {
+  const [objects, setObjects] = useState<DetectedObject[]>([]);
+  const bytes = useEditorStore((state) => state.sources[page.sourceId]?.bytes);
+
+  useEffect(() => {
+    if (!bytes) return undefined;
+    let cancelled = false;
+    void detectObjects(page.sourceId, bytes, page.sourceIndex, page.rotation).then((result) => {
+      if (!cancelled) setObjects(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [page.sourceId, page.sourceIndex, page.rotation, bytes]);
+
+  return (
+    <g className="object-hotspots">
+      {objects.map((object) => (
+        <rect
+          key={object.id}
+          className="object-hotspot"
+          x={object.rect.x}
+          y={object.rect.y}
+          width={object.rect.width}
+          height={object.rect.height}
+          onPointerDown={(event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            onPick({ rect: object.rect, label: object.label });
+          }}
+        >
+          <title>Remove {object.label.toLowerCase()}</title>
+        </rect>
+      ))}
+      {objects.length === 0 && (
+        <text x={8} y={displayHeight - 8} className="text-run-empty" fontSize={11}>
+          No removable objects detected on this page.
+        </text>
+      )}
+    </g>
+  );
+}
+
 function DraftShape({ draft }: { draft: Draft }): JSX.Element | null {
   const { tool, start, current, points } = draft;
   const color = DEFAULT_COLORS[tool] ?? '#1a2030';
@@ -742,19 +838,6 @@ function DraftShape({ draft }: { draft: Draft }): JSX.Element | null {
       );
     case 'highlight':
       return <rect {...rect} fill={color} opacity={0.45} style={{ mixBlendMode: 'multiply' }} />;
-    case 'erase':
-      // The real cover color is sampled on release; preview with a neutral
-      // dashed box so the user sees the region being wiped.
-      return (
-        <rect
-          {...rect}
-          fill="#ffffff"
-          fillOpacity={0.75}
-          stroke="#66646f"
-          strokeWidth={1}
-          strokeDasharray="4 3"
-        />
-      );
     case 'rectangle':
       return <rect {...rect} fill="none" stroke={color} strokeWidth={DEFAULT_STROKE} />;
     case 'ellipse':

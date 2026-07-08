@@ -700,6 +700,21 @@ button:disabled {
   fill: var(--text-muted);
 }
 
+/* Removable page objects: outlined so they're discoverable, and they light
+   up in red (the removal color) on hover. */
+.object-hotspots .object-hotspot {
+  fill: color-mix(in srgb, #c2372e 8%, transparent);
+  stroke: #c2372e;
+  stroke-width: 1;
+  stroke-dasharray: 5 3;
+  cursor: pointer;
+  transition: fill 0.1s;
+}
+
+.object-hotspots .object-hotspot:hover {
+  fill: color-mix(in srgb, #c2372e 28%, transparent);
+}
+
 .text-annotation-editor {
   position: absolute;
   font-family: Helvetica, Arial, sans-serif;

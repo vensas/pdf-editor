@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.6.0 — 2026-07-08
+
+- Removed the cover-based Erase tool
+- New "Remove object" tool (shortcut X): true removal of page objects. It
+  detects the images and graphics (form XObjects) a page draws, shows them as
+  clickable outlines, and — when you export or print — deletes the matching
+  draw operator from the PDF's content stream, so the object is genuinely gone
+  (not covered). Marked objects show a red crossed box; deleting the marker
+  keeps the object. Verified end-to-end against a real logo (a form XObject)
+- Scope: covers `Do`-painted images/forms (the common logo case); inline
+  vector paths are not yet detected
+
 ## 2.5.0 — 2026-07-08
 
 - Reverted the 2.4.1 toolbar split back to the single tool group

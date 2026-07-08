@@ -71,7 +71,7 @@ export interface RecentDoc {
 export type Tool =
   | 'select'
   | 'edit-text'
-  | 'erase'
+  | 'remove-object'
   | 'text'
   | 'ink'
   | 'highlight'

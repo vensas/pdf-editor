@@ -37,7 +37,7 @@ export interface ToolbarProps {
 const TOOLS: { tool: Tool; icon: IconName; label: string; key: string }[] = [
   { tool: 'select', icon: 'cursor', label: 'Select', key: 'V' },
   { tool: 'edit-text', icon: 'editText', label: 'Edit text', key: 'E' },
-  { tool: 'erase', icon: 'eraser', label: 'Erase area', key: 'X' },
+  { tool: 'remove-object', icon: 'removeObject', label: 'Remove object', key: 'X' },
   { tool: 'text', icon: 'text', label: 'Text', key: 'T' },
   { tool: 'ink', icon: 'pen', label: 'Draw', key: 'P' },
   { tool: 'highlight', icon: 'highlighter', label: 'Highlight', key: 'H' },
