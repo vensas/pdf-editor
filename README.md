@@ -42,6 +42,8 @@ No uploads. No accounts. No tracking. No analytics. A static page on GitHub Page
   ready to review, edit, and export
 - 📤 "Export PDF" always downloads the whole document (selection never gets
   in the way); "Export selection" and one-PDF-per-page ZIP cover the rest
+- 🖨️ Print the edited document (Ctrl/⌘+P) — annotations and page edits
+  included, straight to the browser's print dialog
 
 **Editing & annotation** (flattened into the PDF on export)
 

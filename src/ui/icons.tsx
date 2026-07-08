@@ -40,6 +40,8 @@ const PATHS = {
   split: 'M12 4v16M4 8h5m-5 8h5m6-8h5m-5 8h5',
   lock: 'M7 11V8a5 5 0 0 1 10 0v3m-12 0h14v10H5V11Z',
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 3',
+  printer:
+    'M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-10-3h10v7H7v-7Z',
   blankPage: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6',
 } as const;
 

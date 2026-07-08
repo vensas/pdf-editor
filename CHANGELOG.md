@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.0 — 2026-07-08
+
+- Print button (and Ctrl/⌘+P): prints the edited document — reordered,
+  rotated, and annotated pages exactly as they would export — via the
+  browser's print dialog. Assembly happens locally like an export; Safari
+  gets a viewer tab, and a blocked pop-up falls back to a download
+
 ## 2.2.3 — 2026-07-08
 
 - Fixed the text tool: clicking a page created the text box, but the

@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import { selectActiveDocument, useEditorStore } from '../../editor-state/store';
+import { printDocument } from '../../services/export-service';
 import type { Tool } from '../../editor-state/types';
 
 export interface ShortcutHandlers {
@@ -66,6 +67,13 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers): void {
         if (docState.doc.pages.length === 0) return;
         event.preventDefault();
         store.selectAll();
+        return;
+      }
+      if (meta && key.toLowerCase() === 'p') {
+        if (docState.doc.pages.length === 0 || store.busy) return;
+        // Print the edited PDF, not the app's DOM.
+        event.preventDefault();
+        void printDocument().catch(() => undefined);
         return;
       }
       if (meta && key.toLowerCase() === 'd') {

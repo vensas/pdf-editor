@@ -67,6 +67,75 @@ async function assembleAndDownload(
 }
 
 /** Exports the whole active document — always all pages, selection ignored. */
+/**
+ * Prints the whole active document with all edits and annotations baked in:
+ * the same assembly as an export, handed to the browser's print dialog via a
+ * hidden iframe. Falls back to opening a tab (Safari's iframe PDF printing
+ * is unreliable) and, if pop-ups are blocked, to a plain download.
+ */
+export async function printDocument(): Promise<void> {
+  const docState = requireActiveDocument();
+  const fileName = `${safeBaseName(docState.docName)}.pdf`;
+
+  await withBusy('Preparing print', async () => {
+    const input = buildAssembleInput(useEditorStore.getState(), docState, allPageIds(docState));
+    const [bytes] = await pdfWorker.assemble(
+      [{ pages: input.pages }],
+      input.sources,
+      input.assets,
+      progressHandler(),
+    );
+    if (!bytes) throw new Error('Preparing the print produced no document.');
+
+    const url = URL.createObjectURL(new Blob([bytes.slice()], { type: 'application/pdf' }));
+    const opened = await openPrintDialog(url);
+    if (!opened) {
+      URL.revokeObjectURL(url);
+      downloadPdf(bytes, fileName);
+      throw new Error(
+        'The print view was blocked by the browser — the PDF was downloaded instead; print it from your PDF viewer.',
+      );
+    }
+  });
+}
+
+function openPrintDialog(url: string): Promise<boolean> {
+  // Safari cannot reliably print PDFs from an iframe; a viewer tab can.
+  const isSafari = /^((?!chrome|chromium|android).)*safari/i.test(navigator.userAgent);
+  if (isSafari) {
+    return Promise.resolve(window.open(url, '_blank') !== null);
+  }
+
+  return new Promise((resolve) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.src = url;
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        resolve(true);
+      } catch {
+        iframe.remove();
+        resolve(window.open(url, '_blank') !== null);
+      }
+    };
+    document.body.append(iframe);
+    // The iframe must outlive the print dialog; reclaim resources later.
+    window.setTimeout(() => {
+      iframe.remove();
+      URL.revokeObjectURL(url);
+    }, 120_000);
+  });
+}
+
 export async function exportDocument(): Promise<void> {
   const docState = requireActiveDocument();
   await assembleAndDownload(

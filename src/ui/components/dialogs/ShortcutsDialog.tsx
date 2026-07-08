@@ -15,6 +15,7 @@ const GROUPS: { title: string; shortcuts: [string, string][] }[] = [
       [`${MOD}+Z`, 'Undo'],
       [`Shift+${MOD}+Z`, 'Redo'],
       [`${MOD}+A`, 'Select all pages'],
+      [`${MOD}+P`, 'Print the edited document'],
       ['Esc', 'Deselect / back to Select tool'],
       ['?', 'Show this dialog'],
     ],

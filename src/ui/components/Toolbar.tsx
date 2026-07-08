@@ -15,7 +15,12 @@ import type { Tool } from '../../editor-state/types';
 import { addBlankPage } from '../../services/new-document';
 import { openFiles } from '../../services/open-files';
 import { placeImageFromFile } from '../../services/place-image';
-import { exportDocument, exportPagesAsZip, exportSelection } from '../../services/export-service';
+import {
+  exportDocument,
+  exportPagesAsZip,
+  exportSelection,
+  printDocument,
+} from '../../services/export-service';
 import { useToasts } from '../toast/Toasts';
 import { useActiveDoc } from '../hooks/useActiveDoc';
 import { Icon, type IconName } from '../icons';
@@ -252,6 +257,16 @@ export function Toolbar({
         >
           <Icon name="scissors" />
           <span>Export selection{selectionCount > 0 ? ` (${selectionCount})` : ''}</span>
+        </button>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Print document"
+          title="Print the edited document (Ctrl/⌘+P)"
+          disabled={pageCount === 0 || exporting}
+          onClick={() => run(printDocument)}
+        >
+          <Icon name="printer" />
         </button>
         <button
           type="button"
