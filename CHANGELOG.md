@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.2 — 2026-07-08
+
+- Dependencies updated across the board: pdf.js 6, Rsbuild 2, TypeScript 6,
+  Vitest 4, ESLint 10 (with the React Compiler lint rules), jsdom 29
+- Adapted to pdf.js 6's API: render() now receives the canvas directly and
+  document teardown goes through the loading task
+- Ref/effect patterns tightened to satisfy the new React hooks lint rules
+  (no behavior change)
+
 ## 2.2.1 — 2026-07-08
 
 - New social preview image (Open Graph / Twitter card) showing the actual

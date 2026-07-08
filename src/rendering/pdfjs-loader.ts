@@ -57,9 +57,12 @@ export interface LoadedPdfDocument {
 export async function loadPdfDocument(bytes: Uint8Array): Promise<LoadedPdfDocument> {
   ensureWorker();
 
+  // The loading task owns the document's worker resources; since pdf.js 6 it
+  // is also the only way to destroy them.
+  const loadingTask = pdfjs.getDocument({ data: bytes.slice() });
   let doc: PDFDocumentProxy;
   try {
-    doc = await pdfjs.getDocument({ data: bytes.slice() }).promise;
+    doc = await loadingTask.promise;
   } catch (error) {
     throw classifyPdfError(error, 'corrupt');
   }
@@ -102,10 +105,8 @@ export async function loadPdfDocument(bytes: Uint8Array): Promise<LoadedPdfDocum
       canvas.style.width = `${Math.round(target.cssWidth)}px`;
       canvas.style.height = `${Math.round(viewport.height / ratio)}px`;
 
-      const context = canvas.getContext('2d');
-      if (!context) throw new Error('Could not create a canvas context.');
-
-      const task = page.render({ canvasContext: context, viewport });
+      // pdf.js 6 draws into the canvas directly (canvasContext was removed).
+      const task = page.render({ canvas, viewport });
       activeRenders.set(canvas, task);
       try {
         await task.promise;
@@ -124,7 +125,7 @@ export async function loadPdfDocument(bytes: Uint8Array): Promise<LoadedPdfDocum
     },
 
     async destroy(): Promise<void> {
-      await doc.destroy();
+      await loadingTask.destroy();
     },
   };
 }
