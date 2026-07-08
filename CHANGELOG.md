@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.1 — 2026-07-08
+
+- New social preview image (Open Graph / Twitter card) showing the actual
+  editor: document tabs, annotations, a signature, and split-to-tabs
+
 ## 2.2.0 — 2026-07-08
 
 - Multiple documents can be open at once: every opened or dropped PDF gets
