@@ -35,10 +35,10 @@ const GROUPS: { title: string; shortcuts: [string, string][] }[] = [
     title: 'Tools',
     shortcuts: [
       ['V', 'Select'],
+      ['T', 'Add text'],
       ['E', 'Edit existing text'],
-      ['T', 'Text'],
-      ['P', 'Draw (pen)'],
       ['H', 'Highlight'],
+      ['P', 'Draw (pen)'],
       ['R', 'Rectangle'],
       ['O', 'Ellipse'],
       ['L', 'Line'],

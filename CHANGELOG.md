@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.1 — 2026-07-08
+
+- Toolbar reorganized into clearer groups: a labeled **Text** group (Add text,
+  Edit text) separated from an **Annotate** group (highlight, draw, shapes,
+  image, signature), with Select as its own mode button
+- "Add text" is now a prominent labeled button so writing new text is obvious
+- Edit-text mode is far less busy: detected text runs are only faintly tinted
+  and light up on hover ("hover text, click to edit") instead of covering the
+  page in boxes
+- Tool buttons use standard toolbar toggle semantics (aria-pressed)
+
 ## 2.4.0 — 2026-07-08
 
 - Edit existing text (new "Edit text" tool, shortcut E): pick a real text run
