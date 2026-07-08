@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Berlin
+    groups:
+      # vitest and @vitest/* are peer-locked to the same major — bumping one
+      # without the others can never pass CI, so they always travel together.
+      vitest:
+        patterns:
+          - vitest
+          - '@vitest/*'
+      # Collect routine bumps in one PR; majors stay separate for review.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'fix'
+      prefix-development: 'chore'
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Berlin
+    groups:
+      actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: 'chore'
+      include: scope
