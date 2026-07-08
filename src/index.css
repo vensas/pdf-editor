@@ -683,6 +683,22 @@ button:disabled {
   cursor: nesw-resize;
 }
 
+.text-run-hotspots .text-run-hotspot {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+  stroke: var(--accent-strong);
+  stroke-width: 0.75;
+  cursor: text;
+  transition: fill 0.1s;
+}
+
+.text-run-hotspots .text-run-hotspot:hover {
+  fill: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.text-run-empty {
+  fill: var(--text-muted);
+}
+
 .text-annotation-editor {
   position: absolute;
   font-family: Helvetica, Arial, sans-serif;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.0 — 2026-07-08
+
+- Edit existing text (new "Edit text" tool, shortcut E): pick a real text run
+  on the page and rewrite it. pdf.js detects the runs; the original glyphs are
+  covered in the page's sampled background color and the replacement is baked
+  into the exported/printed PDF. Emptying the box redacts the original. This is
+  in-place editing — no reflow, Helvetica replacement, approximate cover color
+  over non-solid backgrounds — the honest limits of editing an arbitrary PDF,
+  surfaced in the UI and README
+
 ## 2.3.0 — 2026-07-08
 
 - Print button (and Ctrl/⌘+P): prints the edited document — reordered,

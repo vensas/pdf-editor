@@ -71,6 +71,23 @@ export interface TextAnnotation extends AnnotationBase {
   color: string;
 }
 
+/**
+ * An in-place edit of the document's own text: the original glyphs under
+ * `rect` are covered with `background` and `text` is drawn on top. This is
+ * "real" text editing (it targets existing page text) as opposed to a text
+ * box placed on empty space. `originalText` is kept for the editing UI only.
+ */
+export interface TextEditAnnotation extends AnnotationBase {
+  kind: 'text-edit';
+  text: string;
+  originalText: string;
+  fontSize: number;
+  /** #rrggbb — the replacement text color. */
+  color: string;
+  /** #rrggbb — the fill used to cover the original glyphs. */
+  background: string;
+}
+
 export interface InkAnnotation extends AnnotationBase {
   kind: 'ink';
   /**
@@ -112,7 +129,12 @@ export interface ShapeAnnotation extends AnnotationBase {
 }
 
 export type Annotation =
-  TextAnnotation | InkAnnotation | ImageAnnotation | HighlightAnnotation | ShapeAnnotation;
+  | TextAnnotation
+  | TextEditAnnotation
+  | InkAnnotation
+  | ImageAnnotation
+  | HighlightAnnotation
+  | ShapeAnnotation;
 
 export type AnnotationKind = Annotation['kind'];
 

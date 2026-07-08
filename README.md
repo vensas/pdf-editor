@@ -47,6 +47,9 @@ No uploads. No accounts. No tracking. No analytics. A static page on GitHub Page
 
 **Editing & annotation** (flattened into the PDF on export)
 
+- ✏️ **Edit existing text** — pick a real text run on the page and change the
+  words; the original is covered in the sampled background color and the new
+  text is baked in (in-place edit, no reflow — see limitations)
 - 📝 Text boxes with inline editing, font size, and color
 - ✍️ Signatures — draw with mouse/touch/pen or upload an image
 - 🖼️ Image/stamp placement (PNG/JPEG)
@@ -151,6 +154,13 @@ minor/patch updates grouped, `vitest`/`@vitest/*` always bumped together).
   would add megabytes to the bundle.
 - **Annotations are flattened.** Exported annotations become regular page content,
   not editable PDF annotation objects.
+- **Text editing is in-place, not reflowing.** Editing existing text detects
+  the real text runs (via pdf.js), covers the original in the sampled
+  background color, and draws the replacement on top. It works best for
+  same-or-shorter edits on solid backgrounds; there is no reflow (widen the
+  box for longer text), the cover color is approximate over images/gradients
+  (adjustable), and the replacement is drawn in Helvetica since the original
+  font/color are not reliably recoverable. Rotated text runs are skipped.
 - Recent documents live in tab memory only — closing the tab forgets them (by design).
 
 ## License

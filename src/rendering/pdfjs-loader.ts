@@ -8,6 +8,7 @@ import * as pdfjs from 'pdfjs-dist';
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { classifyPdfError, PdfError } from '../pdf-core/errors';
 import { normalizeRotation } from '../pdf-core/geometry';
+import { textItemsToRuns, type RawTextItem, type TextRun } from '../pdf-core/text-runs';
 import type { Rotation, SourcePageInfo } from '../pdf-core/types';
 
 /**
@@ -44,6 +45,11 @@ export interface LoadedPdfDocument {
   pageCount: number;
   /** Per-page MediaBox size and inherent rotation, in source page order. */
   pageInfos: SourcePageInfo[];
+  /**
+   * Editable text runs of a page, in display space for the given user
+   * rotation (see src/pdf-core/text-runs.ts).
+   */
+  getTextRuns(pageIndex: number, rotation: Rotation): Promise<TextRun[]>;
   renderPage(pageIndex: number, target: RenderTarget): Promise<void>;
   destroy(): Promise<void>;
 }
@@ -81,6 +87,23 @@ export async function loadPdfDocument(bytes: Uint8Array): Promise<LoadedPdfDocum
   return {
     pageCount: doc.numPages,
     pageInfos,
+
+    async getTextRuns(pageIndex, rotation): Promise<TextRun[]> {
+      const page = await doc.getPage(pageIndex + 1);
+      // scale 1: item advance widths come out directly in display points.
+      const viewport = page.getViewport({
+        scale: 1,
+        rotation: normalizeRotation(page.rotate + rotation),
+      });
+      const content = await page.getTextContent();
+      // TextMarkedContent items lack `str`/`transform`; keep only real runs.
+      const items: RawTextItem[] = content.items.flatMap((item) =>
+        'str' in item && 'transform' in item
+          ? [{ str: item.str, width: item.width, height: item.height, transform: item.transform }]
+          : [],
+      );
+      return textItemsToRuns(items, viewport.transform);
+    },
 
     async renderPage(pageIndex, target): Promise<void> {
       const page = await doc.getPage(pageIndex + 1);

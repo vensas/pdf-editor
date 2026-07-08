@@ -25,6 +25,17 @@ const samples: Annotation[] = [
     color: '#1a2030',
   },
   {
+    kind: 'text-edit',
+    id: 'te1',
+    pageId: 'p1',
+    rect,
+    text: 'New text',
+    originalText: 'Old text',
+    fontSize: 12,
+    color: '#1a2030',
+    background: '#ffffff',
+  },
+  {
     kind: 'ink',
     id: 'i1',
     pageId: 'p1',
@@ -147,6 +158,26 @@ describe('deserialization validation', () => {
         }),
       ),
     ).toThrow(/shape/i);
+  });
+
+  it('rejects a text-edit missing its cover background', () => {
+    const bad = {
+      version: 1,
+      annotations: [
+        {
+          kind: 'text-edit',
+          id: 'x',
+          pageId: 'p',
+          rect,
+          text: 'a',
+          originalText: 'b',
+          fontSize: 12,
+          color: '#000000',
+          // background missing
+        },
+      ],
+    };
+    expect(() => deserializeAnnotations(JSON.stringify(bad))).toThrow(/background/i);
   });
 });
 

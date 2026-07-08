@@ -189,8 +189,62 @@ describe('annotation baking', () => {
         color: '#2e7263',
       }),
       annotationOf('image', { assetId: 'asset-1' }),
+      annotationOf('text-edit', {
+        text: 'Replacement',
+        originalText: 'Original',
+        fontSize: 12,
+        color: '#000000',
+        background: '#ffffff',
+      }),
     ]);
     expect(result.getPageCount()).toBe(1);
+  });
+
+  it('bakes a text edit as a cover rect plus new text', async () => {
+    const source = await makeSourcePdf(1);
+    const coverOnly = await assemblePdf({
+      pages: [
+        plan('s', 0, {
+          annotations: [
+            annotationOf('text-edit', {
+              text: '',
+              originalText: 'Secret',
+              fontSize: 12,
+              color: '#000000',
+              background: '#ffffff',
+            }),
+          ] as Annotation[],
+        }),
+      ],
+      sources: { s: source },
+      assets: NO_ASSETS,
+    });
+    // An empty text-edit is a redaction: it still produces a valid one-page PDF.
+    expect((await PDFDocument.load(coverOnly)).getPageCount()).toBe(1);
+
+    const withText = await assemblePdf({
+      pages: [
+        plan('s', 0, {
+          annotations: [
+            annotationOf('text-edit', {
+              text: 'Public',
+              originalText: 'Secret',
+              fontSize: 12,
+              color: '#000000',
+              background: '#ffffff',
+            }),
+          ] as Annotation[],
+        }),
+      ],
+      sources: { s: source },
+      assets: NO_ASSETS,
+    });
+    // Drawing replacement text embeds Helvetica, growing the object count.
+    const a = await PDFDocument.load(withText);
+    const b = await PDFDocument.load(coverOnly);
+    expect(a.context.enumerateIndirectObjects().length).toBeGreaterThan(
+      b.context.enumerateIndirectObjects().length,
+    );
   });
 
   it('grows the page content when baking (annotations actually land in the PDF)', async () => {

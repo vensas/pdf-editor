@@ -15,10 +15,12 @@ import {
   textBoxHeight,
   textLineHeight,
 } from '../../pdf-core/text-metrics';
+import type { TextRun } from '../../pdf-core/text-runs';
 import type { Annotation, ImageAsset, PageRef, Point, Rect } from '../../pdf-core/types';
 import { selectActiveDocument, useEditorStore } from '../../editor-state/store';
 import { EMPTY_DOC } from '../../editor-state/types';
 import type { DocSnapshot, Tool } from '../../editor-state/types';
+import { renderService } from '../../rendering/render-service';
 import { useActiveDoc } from '../hooks/useActiveDoc';
 import { assetUrl } from '../asset-urls';
 
@@ -29,6 +31,8 @@ export interface AnnotationLayerProps {
   displayHeight: number;
   /** CSS pixels per display point. */
   zoom: number;
+  /** Estimates the page-background color under a display-space rect. */
+  sampleBackground: (rect: Rect) => string;
 }
 
 interface Draft {
@@ -63,12 +67,16 @@ const DEFAULT_COLORS: Partial<Record<Tool, string>> = {
 const DEFAULT_FONT_SIZE = 16;
 const DEFAULT_STROKE = 2.5;
 const MIN_DRAG = 5;
+// Must match TEXT_EDIT_ASCENT_FACTOR in pdf-core/assemble.ts so the on-screen
+// preview and the baked output place the replacement text identically.
+const TEXT_EDIT_ASCENT_FACTOR = 0.8;
 
 export function AnnotationLayer({
   page,
   displayWidth,
   displayHeight,
   zoom,
+  sampleBackground,
 }: AnnotationLayerProps): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
   const textEditorRef = useRef<HTMLTextAreaElement>(null);
@@ -169,6 +177,28 @@ export function AnnotationLayer({
     [addAnnotation, page.id],
   );
 
+  // --- Edit existing text (edit-text tool) -----------------------------------
+
+  const startTextEdit = useCallback(
+    (run: TextRun) => {
+      const id = crypto.randomUUID();
+      addAnnotation({
+        kind: 'text-edit',
+        id,
+        pageId: page.id,
+        rect: run.rect,
+        text: run.text,
+        originalText: run.text,
+        fontSize: run.fontSize,
+        color: '#1a2030',
+        background: sampleBackground(run.rect),
+      });
+      textEditBefore.current = null; // creation already recorded in history
+      setEditingTextId(id);
+    },
+    [addAnnotation, page.id, sampleBackground],
+  );
+
   const handleBackgroundPointerDown = useCallback(
     (event: React.PointerEvent) => {
       if (event.button !== 0) return;
@@ -176,7 +206,8 @@ export function AnnotationLayer({
         setActiveAnnotation(null);
         return;
       }
-      if (tool === 'image') return; // placed via toolbar picker, not by drawing
+      // image = placed via the toolbar picker; edit-text = via run hotspots.
+      if (tool === 'image' || tool === 'edit-text') return;
       const point = toDisplay(event);
 
       if (tool === 'text') {
@@ -295,8 +326,10 @@ export function AnnotationLayer({
   // --- Inline text editing -----------------------------------------------------
 
   const editingAnnotation = annotations.find(
-    (annotation) => annotation.id === editingTextId && annotation.kind === 'text',
-  ) as Extract<Annotation, { kind: 'text' }> | undefined;
+    (annotation) =>
+      annotation.id === editingTextId &&
+      (annotation.kind === 'text' || annotation.kind === 'text-edit'),
+  ) as Extract<Annotation, { kind: 'text' | 'text-edit' }> | undefined;
 
   const stopTextEditing = useCallback(() => {
     if (!editingAnnotation) {
@@ -306,8 +339,9 @@ export function AnnotationLayer({
     const before = textEditBefore.current;
     textEditBefore.current = null;
     setEditingTextId(null);
-    if (editingAnnotation.text.trim() === '') {
-      // Empty text boxes are noise; drop them without polluting history.
+    // An empty *text box* is noise and gets dropped; an empty *text edit*
+    // is meaningful (it deletes the original text under its cover).
+    if (editingAnnotation.kind === 'text' && editingAnnotation.text.trim() === '') {
       useEditorStore.getState().deleteAnnotation(editingAnnotation.id);
       return;
     }
@@ -351,7 +385,7 @@ export function AnnotationLayer({
             className={`annotation ${annotation.id === activeAnnotationId ? 'is-active' : ''}`}
             onPointerDown={(event) => beginMove(event, annotation)}
             onDoubleClick={() => {
-              if (annotation.kind === 'text') {
+              if (annotation.kind === 'text' || annotation.kind === 'text-edit') {
                 textEditBefore.current = activeDocSnapshot();
                 setEditingTextId(annotation.id);
               }
@@ -364,6 +398,15 @@ export function AnnotationLayer({
             />
           </g>
         ))}
+
+        {tool === 'edit-text' && (
+          <TextRunHotspots
+            key={`${page.id}:${page.rotation}`}
+            page={page}
+            displayHeight={displayHeight}
+            onPick={startTextEdit}
+          />
+        )}
 
         {draft && <DraftShape draft={draft} />}
 
@@ -390,8 +433,13 @@ export function AnnotationLayer({
             height: editingAnnotation.rect.height * zoom,
             fontSize: editingAnnotation.fontSize * zoom,
             lineHeight: `${textLineHeight(editingAnnotation.fontSize) * zoom}px`,
-            padding: TEXT_PADDING * zoom,
+            // A text edit sits directly on the covered glyphs (no padding) and
+            // shows its cover color so the replacement previews in place.
+            padding: (editingAnnotation.kind === 'text-edit' ? 0 : TEXT_PADDING) * zoom,
             color: editingAnnotation.color,
+            ...(editingAnnotation.kind === 'text-edit'
+              ? { background: editingAnnotation.background }
+              : {}),
           }}
           onChange={(event) => {
             const text = event.target.value;
@@ -566,7 +614,91 @@ function AnnotationShape({
         </g>
       );
     }
+    case 'text-edit': {
+      const lineHeight = textLineHeight(annotation.fontSize);
+      return (
+        <g>
+          {/* cover the original glyphs with the sampled background color */}
+          <rect
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            fill={annotation.background}
+          />
+          {!hideText &&
+            annotation.text.split('\n').map((line, index) => (
+              <text
+                key={index}
+                x={rect.x}
+                y={rect.y + annotation.fontSize * TEXT_EDIT_ASCENT_FACTOR + index * lineHeight}
+                fontSize={annotation.fontSize}
+                fontFamily="Helvetica, Arial, sans-serif"
+                fill={annotation.color}
+              >
+                {line}
+              </text>
+            ))}
+        </g>
+      );
+    }
   }
+}
+
+/**
+ * Clickable overlay of the page's detected text runs, shown while the
+ * edit-text tool is active. Clicking a run starts an in-place text edit.
+ */
+function TextRunHotspots({
+  page,
+  displayHeight,
+  onPick,
+}: {
+  page: PageRef;
+  displayHeight: number;
+  onPick: (run: TextRun) => void;
+}): JSX.Element | null {
+  // Reset per page via the remount key at the call site, so the effect never
+  // has to clear state synchronously (React Compiler forbids that).
+  const [runs, setRuns] = useState<TextRun[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void renderService.textRuns(page.sourceId, page.sourceIndex, page.rotation).then((result) => {
+      if (!cancelled) setRuns(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [page.sourceId, page.sourceIndex, page.rotation]);
+
+  return (
+    <g className="text-run-hotspots">
+      {runs.map((run, index) => (
+        <rect
+          key={index}
+          className="text-run-hotspot"
+          x={run.rect.x}
+          y={run.rect.y}
+          width={run.rect.width}
+          height={run.rect.height}
+          onPointerDown={(event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            onPick(run);
+          }}
+        >
+          <title>Edit “{run.text}”</title>
+        </rect>
+      ))}
+      {runs.length === 0 && (
+        <text x={8} y={displayHeight - 8} className="text-run-empty" fontSize={11}>
+          No selectable text found on this page.
+        </text>
+      )}
+    </g>
+  );
 }
 
 function DraftShape({ draft }: { draft: Draft }): JSX.Element | null {

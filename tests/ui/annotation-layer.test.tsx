@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageRef } from '../../src/pdf-core/types';
+import type { TextRun } from '../../src/pdf-core/text-runs';
 import {
   initialSnapshot,
   selectActiveDocument,
   useEditorStore,
 } from '../../src/editor-state/store';
 import type { SourceEntry } from '../../src/editor-state/types';
+import { renderService } from '../../src/rendering/render-service';
 import { AnnotationLayer } from '../../src/ui/components/AnnotationLayer';
 
 function makeSource(id: string, pageCount: number): SourceEntry {
@@ -40,7 +42,13 @@ function setupPage(): PageRef {
 
 function renderLayer(page: PageRef): SVGSVGElement {
   const { container } = render(
-    <AnnotationLayer page={page} displayWidth={600} displayHeight={800} zoom={1} />,
+    <AnnotationLayer
+      page={page}
+      displayWidth={600}
+      displayHeight={800}
+      zoom={1}
+      sampleBackground={() => '#ffffff'}
+    />,
   );
   const svg = container.querySelector('svg');
   if (!svg) throw new Error('no svg');
@@ -116,5 +124,59 @@ describe('AnnotationLayer text tool', () => {
     expect(group).not.toBeNull();
     fireEvent.doubleClick(group!);
     expect(screen.getByPlaceholderText(/type here/i)).toHaveValue('Hello');
+  });
+});
+
+describe('AnnotationLayer edit-text tool', () => {
+  const runs: TextRun[] = [
+    { text: 'Original line', rect: { x: 40, y: 60, width: 120, height: 14 }, fontSize: 12 },
+  ];
+
+  it('shows run hotspots and starts an in-place edit pre-filled with the text', async () => {
+    vi.spyOn(renderService, 'textRuns').mockResolvedValue(runs);
+    const page = setupPage();
+    const svg = renderLayer(page);
+    act(() => store().setTool('edit-text'));
+
+    const hotspot = await waitFor(() => {
+      const el = svg.querySelector('.text-run-hotspot');
+      if (!el) throw new Error('no hotspot yet');
+      return el;
+    });
+
+    fireEvent.pointerDown(hotspot, { button: 0 });
+
+    const created = Object.values(activeDoc().doc.annotations);
+    expect(created).toHaveLength(1);
+    expect(created[0]!.kind).toBe('text-edit');
+    expect((created[0] as { text: string }).text).toBe('Original line');
+    expect((created[0] as { originalText: string }).originalText).toBe('Original line');
+    // Cover color came from the sampleBackground prop (#ffffff in the harness).
+    expect((created[0] as { background: string }).background).toBe('#ffffff');
+    // The inline editor opens, pre-filled, ready to change the words.
+    expect(screen.getByPlaceholderText(/type here/i)).toHaveValue('Original line');
+  });
+
+  it('keeps an emptied text edit (redaction), unlike an empty text box', async () => {
+    vi.spyOn(renderService, 'textRuns').mockResolvedValue(runs);
+    const page = setupPage();
+    const svg = renderLayer(page);
+    act(() => store().setTool('edit-text'));
+
+    const hotspot = await waitFor(() => {
+      const el = svg.querySelector('.text-run-hotspot');
+      if (!el) throw new Error('no hotspot yet');
+      return el;
+    });
+    fireEvent.pointerDown(hotspot, { button: 0 });
+
+    const editor = screen.getByPlaceholderText(/type here/i);
+    fireEvent.change(editor, { target: { value: '' } });
+    fireEvent.blur(editor);
+
+    // The cover survives with empty text — it redacts the original.
+    const annotations = Object.values(activeDoc().doc.annotations);
+    expect(annotations).toHaveLength(1);
+    expect((annotations[0] as { text: string }).text).toBe('');
   });
 });

@@ -4,7 +4,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import type { Rect } from '../../pdf-core/types';
 import { renderService } from '../../rendering/render-service';
+import { sampleBackgroundColor } from '../../rendering/sample-background';
 import { computeDisplayInfo } from '../../editor-state/selectors';
 import { useEditorStore } from '../../editor-state/store';
 import { useActiveDoc } from '../hooks/useActiveDoc';
@@ -92,6 +94,16 @@ export function CanvasView(): JSX.Element {
     [zoom],
   );
 
+  const sampleBackground = useCallback(
+    (rect: Rect): string => {
+      const canvas = canvasRef.current;
+      if (!canvas || !display || canvas.width === 0) return '#ffffff';
+      // Canvas pixels per display point (canvas is rendered at display.width * zoom * dpr).
+      return sampleBackgroundColor(canvas, rect, canvas.width / display.width);
+    },
+    [display],
+  );
+
   if (!page || !display) {
     return (
       <section className="canvas-view" aria-label="Page preview">
@@ -122,6 +134,7 @@ export function CanvasView(): JSX.Element {
             displayWidth={display.width}
             displayHeight={display.height}
             zoom={zoom}
+            sampleBackground={sampleBackground}
           />
         </div>
       </div>

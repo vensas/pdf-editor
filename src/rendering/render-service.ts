@@ -4,6 +4,7 @@
  * concurrent render calls.
  */
 
+import type { TextRun } from '../pdf-core/text-runs';
 import type { Rotation, SourceId, SourcePageInfo } from '../pdf-core/types';
 import type { LoadedPdfDocument } from './pdfjs-loader';
 
@@ -71,6 +72,17 @@ class RenderService {
 
   pageInfo(sourceId: SourceId, pageIndex: number): SourcePageInfo | undefined {
     return this.documents.get(sourceId)?.pageInfos[pageIndex];
+  }
+
+  /** Editable text runs of a page in display space, or [] if unavailable. */
+  async textRuns(sourceId: SourceId, pageIndex: number, rotation: Rotation): Promise<TextRun[]> {
+    const doc = this.documents.get(sourceId);
+    if (!doc) return [];
+    try {
+      return await doc.getTextRuns(pageIndex, rotation);
+    } catch {
+      return [];
+    }
   }
 
   /**

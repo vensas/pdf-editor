@@ -31,10 +31,15 @@ import type {
   ImageAnnotation,
   PagePlanItem,
   Point,
+  Rect,
   Rotation,
   SourceId,
   TextAnnotation,
+  TextEditAnnotation,
 } from './types';
+
+/** Baseline position within a replaced text run, as a fraction of the box. */
+const TEXT_EDIT_ASCENT_FACTOR = 0.8;
 
 export interface AssembleProgress {
   (pagesDone: number, totalPages: number): void;
@@ -318,6 +323,9 @@ async function bakeAnnotation(
 
     case 'text':
       return bakeText(page, annotation, rotation, toPdf, resources);
+
+    case 'text-edit':
+      return bakeTextEdit(page, annotation, rotation, toPdf, rectToPdf, resources);
   }
 }
 
@@ -361,6 +369,45 @@ async function bakeText(
     const baseline = toPdf({
       x: rect.x + TEXT_PADDING,
       y: rect.y + TEXT_PADDING + fontSize * TEXT_ASCENT_FACTOR + index * lineHeight,
+    });
+    page.drawText(line, {
+      x: baseline.x,
+      y: baseline.y,
+      size: fontSize,
+      font,
+      color,
+      rotate: degrees(rotation),
+    });
+  });
+}
+
+/**
+ * Bakes an in-place text edit: cover the original glyphs with the sampled
+ * background color, then draw the replacement text on the original baseline.
+ */
+async function bakeTextEdit(
+  page: PDFPage,
+  annotation: TextEditAnnotation,
+  rotation: Rotation,
+  toPdf: (p: Point) => Point,
+  rectToPdf: (rect: Rect) => Rect,
+  resources: DrawResources,
+): Promise<void> {
+  page.drawRectangle({ ...rectToPdf(annotation.rect), color: hexToRgb(annotation.background) });
+
+  if (annotation.text.trim() === '') return; // deletion: cover only
+
+  const font = await resources.getFont();
+  const { rect, fontSize } = annotation;
+  const color = hexToRgb(annotation.color);
+  const lineHeight = textLineHeight(fontSize);
+  const lines = resources.sanitize(font, annotation.text).split('\n');
+
+  lines.forEach((line, index) => {
+    if (line === '') return;
+    const baseline = toPdf({
+      x: rect.x,
+      y: rect.y + fontSize * TEXT_EDIT_ASCENT_FACTOR + index * lineHeight,
     });
     page.drawText(line, {
       x: baseline.x,

@@ -69,7 +69,16 @@ export interface RecentDoc {
 }
 
 export type Tool =
-  'select' | 'text' | 'ink' | 'highlight' | 'rectangle' | 'ellipse' | 'line' | 'arrow' | 'image';
+  | 'select'
+  | 'edit-text'
+  | 'text'
+  | 'ink'
+  | 'highlight'
+  | 'rectangle'
+  | 'ellipse'
+  | 'line'
+  | 'arrow'
+  | 'image';
 
 export interface BusyState {
   label: string;

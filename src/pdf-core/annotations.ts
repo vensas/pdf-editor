@@ -148,6 +148,26 @@ export function parseAnnotation(value: unknown): Annotation {
         color: parseColor(value['color'], 'color'),
       };
     }
+    case 'text-edit': {
+      if (
+        typeof value['text'] !== 'string' ||
+        typeof value['originalText'] !== 'string' ||
+        !isFiniteNumber(value['fontSize'])
+      ) {
+        throw new Error('Text-edit annotation is malformed.');
+      }
+      return {
+        kind: 'text-edit',
+        id,
+        pageId,
+        rect,
+        text: value['text'],
+        originalText: value['originalText'],
+        fontSize: value['fontSize'],
+        color: parseColor(value['color'], 'color'),
+        background: parseColor(value['background'], 'background'),
+      };
+    }
     case 'ink': {
       if (!Array.isArray(value['paths']) || !isFiniteNumber(value['strokeWidth'])) {
         throw new Error('Ink annotation is malformed.');

@@ -25,6 +25,7 @@ export function PropertiesPanel(): JSX.Element {
 
 const KIND_LABELS: Record<Annotation['kind'], string> = {
   text: 'Text',
+  'text-edit': 'Edited text',
   ink: 'Freehand drawing',
   image: 'Image',
   highlight: 'Highlight',
@@ -42,24 +43,29 @@ function AnnotationProperties({ annotation }: { annotation: Annotation }): JSX.E
     <div className="panel-section">
       <h2>{label}</h2>
 
-      {annotation.kind === 'text' && (
+      {(annotation.kind === 'text' || annotation.kind === 'text-edit') && (
         <>
           <label className="field">
             <span>Text</span>
             <textarea
-              rows={4}
+              rows={annotation.kind === 'text-edit' ? 2 : 4}
               value={annotation.text}
               onChange={(event) => {
                 const text = event.target.value;
                 updateAnnotation(annotation.id, {
                   text,
-                  rect: {
-                    ...annotation.rect,
-                    height: Math.max(
-                      annotation.rect.height,
-                      textBoxHeight(annotation.fontSize, text.split('\n').length),
-                    ),
-                  },
+                  // Text boxes grow to fit; text edits keep the run's box.
+                  ...(annotation.kind === 'text'
+                    ? {
+                        rect: {
+                          ...annotation.rect,
+                          height: Math.max(
+                            annotation.rect.height,
+                            textBoxHeight(annotation.fontSize, text.split('\n').length),
+                          ),
+                        },
+                      }
+                    : {}),
                 });
               }}
             />
@@ -85,6 +91,20 @@ function AnnotationProperties({ annotation }: { annotation: Annotation }): JSX.E
             />
           </label>
         </>
+      )}
+
+      {annotation.kind === 'text-edit' && (
+        <label className="field">
+          <span>Cover color</span>
+          <input
+            type="color"
+            value={annotation.background}
+            aria-label="Cover color"
+            onChange={(event) =>
+              updateAnnotation(annotation.id, { background: event.target.value })
+            }
+          />
+        </label>
       )}
 
       {'color' in annotation && (
