@@ -175,7 +175,12 @@ describe('annotation baking', () => {
               { text: ' both', bold: true, italic: true },
             ],
           },
-          { spans: [{ text: 'under', underline: true }, { text: 'struck', strike: true }] },
+          {
+            spans: [
+              { text: 'under', underline: true },
+              { text: 'struck', strike: true },
+            ],
+          },
         ],
         fontSize: 14,
         color: '#112233',

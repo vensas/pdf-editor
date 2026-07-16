@@ -439,7 +439,8 @@ async function bakeRichText(
 
   for (const [lineIndex, block] of annotation.blocks.entries()) {
     // Baseline of this line, in display space.
-    const baselineY = rect.y + TEXT_PADDING + fontSize * TEXT_ASCENT_FACTOR + lineIndex * lineHeight;
+    const baselineY =
+      rect.y + TEXT_PADDING + fontSize * TEXT_ASCENT_FACTOR + lineIndex * lineHeight;
     let advanceX = rect.x + TEXT_PADDING;
 
     for (const span of block.spans) {

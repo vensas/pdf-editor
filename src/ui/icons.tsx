@@ -49,7 +49,8 @@ const PATHS = {
   formatBold: 'M7 5h6a3.5 3.5 0 0 1 0 7H7V5Zm0 7h7a3.5 3.5 0 0 1 0 7H7v-7Z',
   formatItalic: 'M10 4h8M6 20h8m0-16-4 16',
   formatUnderline: 'M6 4v6a6 6 0 0 0 12 0V4M5 20h14',
-  formatStrike: 'M16 6c-.7-1.5-2.2-2.4-4-2.4-2.2 0-4 1.3-4 3s1.5 2.6 4 3.4M8 18c.7 1.5 2.2 2.4 4 2.4 2.2 0 4-1.3 4-3 0-.8-.4-1.5-1-2M4 12h16',
+  formatStrike:
+    'M16 6c-.7-1.5-2.2-2.4-4-2.4-2.2 0-4 1.3-4 3s1.5 2.6 4 3.4M8 18c.7 1.5 2.2 2.4 4 2.4 2.2 0 4-1.3 4-3 0-.8-.4-1.5-1-2M4 12h16',
 } as const;
 
 export type IconName = keyof typeof PATHS;
