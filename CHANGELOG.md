@@ -15,6 +15,10 @@
 - Fixed: double-clicking a text annotation to edit it inline never opened the
   editor (the drag-move pointer capture swallowed the double-click); this now
   works for plain text, edited text, and rich text alike
+- Moved to the custom domain https://pdf-editor.apps.vensas.de/ — the build's
+  base path now defaults to `/` (override with `PUBLIC_BASE_PATH=/pdf-editor/`
+  for project-page hosts); OG/Twitter metadata and the PDF Creator stamp
+  point to the new domain
 
 ## 2.6.0 — 2026-07-08
 

@@ -6,9 +6,10 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
   version: string;
 };
 
-// Served from https://vensas.github.io/pdf-editor/ — override with
-// PUBLIC_BASE_PATH=/ for local production previews or other hosts.
-const basePath = process.env['PUBLIC_BASE_PATH'] ?? '/pdf-editor/';
+// Served from https://pdf-editor.apps.vensas.de/ (custom domain at the
+// root). Override with PUBLIC_BASE_PATH=/pdf-editor/ to build for a
+// project-page host like vensas.github.io/pdf-editor/.
+const basePath = process.env['PUBLIC_BASE_PATH'] ?? '/';
 
 export default defineConfig(({ env }) => ({
   plugins: [pluginReact()],

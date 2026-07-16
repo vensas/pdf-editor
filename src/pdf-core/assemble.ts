@@ -84,7 +84,7 @@ export async function assembleDocuments(
   for (const job of jobs) {
     const target = await PDFDocument.create();
     target.setProducer('vensas PDF Editor');
-    target.setCreator('vensas PDF Editor — https://vensas.github.io/pdf-editor/');
+    target.setCreator('vensas PDF Editor — https://pdf-editor.apps.vensas.de/');
 
     const resources = new DrawResources(target, assets);
     const copied = await copyJobPages(target, job.pages, sources, loadedSources);

@@ -2,12 +2,12 @@
 
 [![Test & Deploy](https://github.com/vensas/pdf-editor/actions/workflows/deploy.yml/badge.svg)](https://github.com/vensas/pdf-editor/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6ABEA7)](LICENSE)
-[![Live](https://img.shields.io/badge/live-vensas.github.io%2Fpdf--editor-2C3341)](https://vensas.github.io/pdf-editor/)
+[![Live](https://img.shields.io/badge/live-pdf--editor.apps.vensas.de-2C3341)](https://pdf-editor.apps.vensas.de/)
 
 A [vensas GmbH](https://www.vensas.de) product — edit, split, merge, and annotate PDFs,
 **entirely in your browser**.
 
-**➜ [Open PDF Editor](https://vensas.github.io/pdf-editor/)**
+**➜ [Open PDF Editor](https://pdf-editor.apps.vensas.de/)**
 
 ## Why this exists
 
@@ -128,11 +128,12 @@ then deploys to GitHub Pages via
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). Pull requests get
 the test job only.
 
-The base path defaults to `/pdf-editor/` (the GitHub Pages URL). Override it for
-other hosts with an environment variable at build time:
+The base path defaults to `/` (the site lives at the root of the custom domain
+[pdf-editor.apps.vensas.de](https://pdf-editor.apps.vensas.de/)). Override it
+for project-page hosts with an environment variable at build time:
 
 ```bash
-PUBLIC_BASE_PATH=/ pnpm build
+PUBLIC_BASE_PATH=/pdf-editor/ pnpm build
 ```
 
 > Note: if a Pages deployment fails transiently, trigger a fresh run
