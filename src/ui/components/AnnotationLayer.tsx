@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { denormalizeInkPath, lineEndpoints, normalizeInkPaths } from '../../pdf-core/annotations';
 import { clampRectToPage } from '../../pdf-core/geometry';
+import { emptyRichText, richTextPlainText } from '../../pdf-core/rich-text';
 import {
   TEXT_ASCENT_FACTOR,
   TEXT_PADDING,
@@ -24,6 +25,7 @@ import { renderService } from '../../rendering/render-service';
 import { detectObjects, type DetectedObject } from '../../services/object-detect';
 import { useActiveDoc } from '../hooks/useActiveDoc';
 import { assetUrl } from '../asset-urls';
+import { RichTextEditor } from './RichTextEditor';
 
 export interface AnnotationLayerProps {
   page: PageRef;
@@ -57,6 +59,7 @@ interface Interaction {
 
 const DEFAULT_COLORS: Partial<Record<Tool, string>> = {
   text: '#1a2030',
+  richtext: '#1a2030',
   ink: '#2e7263',
   highlight: '#ffd43b',
   rectangle: '#c2372e',
@@ -225,7 +228,7 @@ export function AnnotationLayer({
       if (tool === 'image' || tool === 'edit-text' || tool === 'remove-object') return;
       const point = toDisplay(event);
 
-      if (tool === 'text') {
+      if (tool === 'text' || tool === 'richtext') {
         // Prevent the pointerdown's default focus handling: it would run
         // AFTER the editor textarea mounts and auto-focuses, blur it, and
         // the empty-text cleanup would instantly delete the new annotation.
@@ -237,15 +240,27 @@ export function AnnotationLayer({
           displayHeight,
         );
         const id = crypto.randomUUID();
-        addAnnotation({
-          kind: 'text',
-          id,
-          pageId: page.id,
-          rect,
-          text: '',
-          fontSize: DEFAULT_FONT_SIZE,
-          color: DEFAULT_COLORS.text!,
-        });
+        addAnnotation(
+          tool === 'text'
+            ? {
+                kind: 'text',
+                id,
+                pageId: page.id,
+                rect,
+                text: '',
+                fontSize: DEFAULT_FONT_SIZE,
+                color: DEFAULT_COLORS.text!,
+              }
+            : {
+                kind: 'rich-text',
+                id,
+                pageId: page.id,
+                rect,
+                blocks: emptyRichText(),
+                fontSize: DEFAULT_FONT_SIZE,
+                color: DEFAULT_COLORS.richtext!,
+              },
+        );
         textEditBefore.current = null; // creation already recorded in history
         setEditingTextId(id);
         return;
@@ -308,7 +323,11 @@ export function AnnotationLayer({
       if (tool !== 'select' || event.button !== 0) return;
       event.stopPropagation();
       setActiveAnnotation(annotation.id);
-      capturePointer(svgRef.current, event.pointerId);
+      // Capture on the annotation's own <g>, not the svg: captured pointer
+      // events retarget to the capture element, and a capture on the svg
+      // would swallow the dblclick that opens the inline text editor. Moves
+      // still reach the svg's onPointerMove by bubbling.
+      capturePointer(event.currentTarget as Element, event.pointerId);
       interaction.current = {
         mode: 'move',
         id: annotation.id,
@@ -343,8 +362,10 @@ export function AnnotationLayer({
   const editingAnnotation = annotations.find(
     (annotation) =>
       annotation.id === editingTextId &&
-      (annotation.kind === 'text' || annotation.kind === 'text-edit'),
-  ) as Extract<Annotation, { kind: 'text' | 'text-edit' }> | undefined;
+      (annotation.kind === 'text' ||
+        annotation.kind === 'text-edit' ||
+        annotation.kind === 'rich-text'),
+  ) as Extract<Annotation, { kind: 'text' | 'text-edit' | 'rich-text' }> | undefined;
 
   const stopTextEditing = useCallback(() => {
     if (!editingAnnotation) {
@@ -356,7 +377,13 @@ export function AnnotationLayer({
     setEditingTextId(null);
     // An empty *text box* is noise and gets dropped; an empty *text edit*
     // is meaningful (it deletes the original text under its cover).
-    if (editingAnnotation.kind === 'text' && editingAnnotation.text.trim() === '') {
+    const emptied =
+      editingAnnotation.kind === 'text'
+        ? editingAnnotation.text.trim() === ''
+        : editingAnnotation.kind === 'rich-text'
+          ? richTextPlainText(editingAnnotation.blocks).trim() === ''
+          : false;
+    if (emptied) {
       useEditorStore.getState().deleteAnnotation(editingAnnotation.id);
       return;
     }
@@ -400,7 +427,11 @@ export function AnnotationLayer({
             className={`annotation ${annotation.id === activeAnnotationId ? 'is-active' : ''}`}
             onPointerDown={(event) => beginMove(event, annotation)}
             onDoubleClick={() => {
-              if (annotation.kind === 'text' || annotation.kind === 'text-edit') {
+              if (
+                annotation.kind === 'text' ||
+                annotation.kind === 'text-edit' ||
+                annotation.kind === 'rich-text'
+              ) {
                 textEditBefore.current = activeDocSnapshot();
                 setEditingTextId(annotation.id);
               }
@@ -443,7 +474,32 @@ export function AnnotationLayer({
         )}
       </svg>
 
-      {editingAnnotation && (
+      {editingAnnotation && editingAnnotation.kind === 'rich-text' && (
+        <RichTextEditor
+          key={editingAnnotation.id}
+          annotation={editingAnnotation}
+          zoom={zoom}
+          onChange={(blocks) =>
+            updateAnnotation(
+              editingAnnotation.id,
+              {
+                blocks,
+                rect: {
+                  ...editingAnnotation.rect,
+                  height: Math.max(
+                    editingAnnotation.rect.height,
+                    textBoxHeight(editingAnnotation.fontSize, blocks.length),
+                  ),
+                },
+              },
+              { transient: true },
+            )
+          }
+          onDone={stopTextEditing}
+        />
+      )}
+
+      {editingAnnotation && editingAnnotation.kind !== 'rich-text' && (
         <textarea
           ref={textEditorRef}
           className="text-annotation-editor"
@@ -666,6 +722,53 @@ function AnnotationShape({
               fill={annotation.color}
             >
               {line}
+            </text>
+          ))}
+        </g>
+      );
+    }
+    case 'rich-text': {
+      if (hideText) return null;
+      const lineHeight = textLineHeight(annotation.fontSize);
+      return (
+        <g>
+          {/* subtle hit/selection area */}
+          <rect
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            fill="transparent"
+            className="text-hit-area"
+          />
+          {annotation.blocks.map((block, index) => (
+            <text
+              key={index}
+              x={rect.x + TEXT_PADDING}
+              y={
+                rect.y +
+                TEXT_PADDING +
+                annotation.fontSize * TEXT_ASCENT_FACTOR +
+                index * lineHeight
+              }
+              fontSize={annotation.fontSize}
+              fontFamily="Helvetica, Arial, sans-serif"
+              fill={annotation.color}
+            >
+              {block.spans.map((span, spanIndex) => (
+                <tspan
+                  key={spanIndex}
+                  fontWeight={span.bold ? 'bold' : 'normal'}
+                  fontStyle={span.italic ? 'italic' : 'normal'}
+                  textDecoration={
+                    [span.underline && 'underline', span.strike && 'line-through']
+                      .filter(Boolean)
+                      .join(' ') || undefined
+                  }
+                >
+                  {span.text}
+                </tspan>
+              ))}
             </text>
           ))}
         </g>

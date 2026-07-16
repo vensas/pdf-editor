@@ -25,6 +25,19 @@ const samples: Annotation[] = [
     color: '#1a2030',
   },
   {
+    kind: 'rich-text',
+    id: 'rt1',
+    pageId: 'p1',
+    rect,
+    blocks: [
+      { spans: [{ text: 'plain ' }, { text: 'bold', bold: true }] },
+      { spans: [] },
+      { spans: [{ text: 'mixed', italic: true, underline: true, strike: true }] },
+    ],
+    fontSize: 14,
+    color: '#1a2030',
+  },
+  {
     kind: 'text-edit',
     id: 'te1',
     pageId: 'p1',
@@ -158,6 +171,17 @@ describe('deserialization validation', () => {
         }),
       ),
     ).toThrow(/shape/i);
+  });
+
+  it('rejects malformed rich text blocks and spans', () => {
+    const base = { kind: 'rich-text', id: 'rt', pageId: 'p', rect, fontSize: 12, color: '#000000' };
+    for (const blocks of ['nope', [{ spans: 'nope' }], [{ spans: [{ text: 42 }] }]]) {
+      const json = JSON.stringify({
+        version: ANNOTATION_SCHEMA_VERSION,
+        annotations: [{ ...base, blocks }],
+      });
+      expect(() => deserializeAnnotations(json)).toThrow();
+    }
   });
 
   it('rejects a text-edit missing its cover background', () => {

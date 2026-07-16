@@ -18,6 +18,7 @@ const TOOL_KEYS: Record<string, Tool> = {
   e: 'edit-text',
   x: 'remove-object',
   t: 'text',
+  b: 'richtext',
   p: 'ink',
   h: 'highlight',
   r: 'rectangle',

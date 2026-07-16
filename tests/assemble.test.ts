@@ -166,6 +166,20 @@ describe('annotation baking', () => {
   it('bakes every annotation kind without corrupting the document', async () => {
     const result = await bakeOne([
       annotationOf('text', { text: 'Hello Wörld\nSecond line', fontSize: 14, color: '#112233' }),
+      annotationOf('rich-text', {
+        blocks: [
+          {
+            spans: [
+              { text: 'plain ' },
+              { text: 'bold', bold: true },
+              { text: ' both', bold: true, italic: true },
+            ],
+          },
+          { spans: [{ text: 'under', underline: true }, { text: 'struck', strike: true }] },
+        ],
+        fontSize: 14,
+        color: '#112233',
+      }),
       annotationOf('highlight', { color: '#ffd43b', opacity: 0.4 }),
       annotationOf('shape', {
         shape: 'rectangle',
@@ -245,6 +259,51 @@ describe('annotation baking', () => {
     expect(a.context.enumerateIndirectObjects().length).toBeGreaterThan(
       b.context.enumerateIndirectObjects().length,
     );
+  });
+
+  it('embeds a Helvetica variant per styled rich text span', async () => {
+    const plain = await bakeOne([
+      annotationOf('rich-text', {
+        blocks: [{ spans: [{ text: 'regular only' }] }],
+        fontSize: 12,
+        color: '#000000',
+      }),
+    ]);
+    const styled = await bakeOne([
+      annotationOf('rich-text', {
+        blocks: [
+          {
+            spans: [
+              { text: 'regular ' },
+              { text: 'bold', bold: true },
+              { text: 'italic', italic: true },
+              { text: 'both', bold: true, italic: true },
+            ],
+          },
+        ],
+        fontSize: 12,
+        color: '#000000',
+      }),
+    ]);
+    expect(styled.getPageCount()).toBe(1);
+    // Four variants embedded instead of one grows the object count.
+    expect(styled.context.enumerateIndirectObjects().length).toBeGreaterThan(
+      plain.context.enumerateIndirectObjects().length,
+    );
+  });
+
+  it('bakes rich text on a rotated page without corrupting the document', async () => {
+    const result = await bakeOne(
+      [
+        annotationOf('rich-text', {
+          blocks: [{ spans: [{ text: 'rotated', bold: true, underline: true }] }],
+          fontSize: 12,
+          color: '#000000',
+        }),
+      ],
+      90,
+    );
+    expect(result.getPageCount()).toBe(1);
   });
 
   it('grows the page content when baking (annotations actually land in the PDF)', async () => {

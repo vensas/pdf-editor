@@ -4,7 +4,16 @@
  * annotation data can never smuggle malformed shapes into the editor.
  */
 
-import type { Annotation, AnnotationId, PageId, Point, Rect, ShapeKind } from './types';
+import type {
+  Annotation,
+  AnnotationId,
+  PageId,
+  Point,
+  Rect,
+  RichTextBlock,
+  RichTextSpan,
+  ShapeKind,
+} from './types';
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -123,6 +132,26 @@ function parseColor(value: unknown, field: string): string {
   return value;
 }
 
+function parseRichTextBlock(value: unknown): RichTextBlock {
+  if (!isRecord(value) || !Array.isArray(value['spans'])) {
+    throw new Error('Rich text block is malformed.');
+  }
+  return {
+    spans: value['spans'].map((span: unknown): RichTextSpan => {
+      if (!isRecord(span) || typeof span['text'] !== 'string') {
+        throw new Error('Rich text span is malformed.');
+      }
+      return {
+        text: span['text'],
+        bold: span['bold'] === true ? true : undefined,
+        italic: span['italic'] === true ? true : undefined,
+        underline: span['underline'] === true ? true : undefined,
+        strike: span['strike'] === true ? true : undefined,
+      };
+    }),
+  };
+}
+
 const SHAPE_KINDS: readonly ShapeKind[] = ['rectangle', 'ellipse', 'line', 'arrow'];
 
 export function parseAnnotation(value: unknown): Annotation {
@@ -144,6 +173,20 @@ export function parseAnnotation(value: unknown): Annotation {
         pageId,
         rect,
         text: value['text'],
+        fontSize: value['fontSize'],
+        color: parseColor(value['color'], 'color'),
+      };
+    }
+    case 'rich-text': {
+      if (!Array.isArray(value['blocks']) || !isFiniteNumber(value['fontSize'])) {
+        throw new Error('Rich text annotation is malformed.');
+      }
+      return {
+        kind: 'rich-text',
+        id,
+        pageId,
+        rect,
+        blocks: value['blocks'].map(parseRichTextBlock),
         fontSize: value['fontSize'],
         color: parseColor(value['color'], 'color'),
       };

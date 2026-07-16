@@ -25,6 +25,7 @@ export function PropertiesPanel(): JSX.Element {
 
 const KIND_LABELS: Record<Annotation['kind'], string> = {
   text: 'Text',
+  'rich-text': 'Rich text',
   'text-edit': 'Edited text',
   'object-removal': 'Removed object',
   ink: 'Freehand drawing',
@@ -71,27 +72,36 @@ function AnnotationProperties({ annotation }: { annotation: Annotation }): JSX.E
               }}
             />
           </label>
-          <label className="field">
-            <span>Font size</span>
-            {/* Uncontrolled so the field can be cleared while typing; only
-                valid values reach the store. */}
-            <input
-              key={annotation.id}
-              type="number"
-              min={6}
-              max={96}
-              defaultValue={annotation.fontSize}
-              onChange={(event) => {
-                const value = event.target.valueAsNumber;
-                if (Number.isFinite(value)) {
-                  updateAnnotation(annotation.id, {
-                    fontSize: Math.min(Math.max(value, 6), 96),
-                  });
-                }
-              }}
-            />
-          </label>
         </>
+      )}
+
+      {(annotation.kind === 'text' ||
+        annotation.kind === 'text-edit' ||
+        annotation.kind === 'rich-text') && (
+        <label className="field">
+          <span>Font size</span>
+          {/* Uncontrolled so the field can be cleared while typing; only
+              valid values reach the store. */}
+          <input
+            key={annotation.id}
+            type="number"
+            min={6}
+            max={96}
+            defaultValue={annotation.fontSize}
+            onChange={(event) => {
+              const value = event.target.valueAsNumber;
+              if (Number.isFinite(value)) {
+                updateAnnotation(annotation.id, {
+                  fontSize: Math.min(Math.max(value, 6), 96),
+                });
+              }
+            }}
+          />
+        </label>
+      )}
+
+      {annotation.kind === 'rich-text' && (
+        <p className="muted small">Double-click the box on the page to edit and format the text.</p>
       )}
 
       {annotation.kind === 'text-edit' && (

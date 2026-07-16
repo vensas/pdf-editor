@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.7.0 — 2026-07-17
+
+- New "Rich text" tool (shortcut B), built on Tiptap: place a text box and
+  format it inline with bold, italic, underline, and strikethrough. A small
+  formatting toolbar floats above the box while editing (⌘/Ctrl+B/I/U also
+  work)
+- Rich text exports as real PDF text: each styled run is drawn with the
+  matching Helvetica variant (regular/bold/oblique/bold-oblique); underline
+  and strikethrough are drawn as vector lines relative to the baseline
+- Rich text boxes support the usual annotation workflow: move, resize, font
+  size and color in the properties panel, double-click to re-edit, undo/redo,
+  and an empty box is dropped automatically
+- Fixed: double-clicking a text annotation to edit it inline never opened the
+  editor (the drag-move pointer capture swallowed the double-click); this now
+  works for plain text, edited text, and rich text alike
+
 ## 2.6.0 — 2026-07-08
 
 - Removed the cover-based Erase tool

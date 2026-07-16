@@ -33,6 +33,7 @@ import type {
   PagePlanItem,
   Point,
   Rect,
+  RichTextAnnotation,
   Rotation,
   SourceId,
   TextAnnotation,
@@ -181,9 +182,26 @@ async function loadSource(
 
 // --- Drawing -----------------------------------------------------------------
 
-/** Lazily created, per-target-document pdf-lib resources (font, images). */
+/** The Helvetica variant matching a rich text span's bold/italic flags. */
+type FontVariant = 'regular' | 'bold' | 'oblique' | 'bold-oblique';
+
+const VARIANT_FONTS: Record<FontVariant, StandardFonts> = {
+  regular: StandardFonts.Helvetica,
+  bold: StandardFonts.HelveticaBold,
+  oblique: StandardFonts.HelveticaOblique,
+  'bold-oblique': StandardFonts.HelveticaBoldOblique,
+};
+
+function spanVariant(span: { bold?: boolean | undefined; italic?: boolean | undefined }) {
+  if (span.bold && span.italic) return 'bold-oblique' as const;
+  if (span.bold) return 'bold' as const;
+  if (span.italic) return 'oblique' as const;
+  return 'regular' as const;
+}
+
+/** Lazily created, per-target-document pdf-lib resources (fonts, images). */
 class DrawResources {
-  private font: PDFFont | null = null;
+  private readonly fonts = new Map<FontVariant, PDFFont>();
   private readonly images = new Map<AssetId, PDFImage>();
   private readonly encodable = new Map<string, boolean>();
 
@@ -192,9 +210,12 @@ class DrawResources {
     private readonly assets: AssembleInput['assets'],
   ) {}
 
-  async getFont(): Promise<PDFFont> {
-    this.font ??= await this.target.embedFont(StandardFonts.Helvetica);
-    return this.font;
+  async getFont(variant: FontVariant = 'regular'): Promise<PDFFont> {
+    const cached = this.fonts.get(variant);
+    if (cached) return cached;
+    const font = await this.target.embedFont(VARIANT_FONTS[variant]);
+    this.fonts.set(variant, font);
+    return font;
   }
 
   async getImage(assetId: AssetId): Promise<PDFImage> {
@@ -335,6 +356,9 @@ async function bakeAnnotation(
     case 'text':
       return bakeText(page, annotation, rotation, toPdf, resources);
 
+    case 'rich-text':
+      return bakeRichText(page, annotation, rotation, toPdf, resources);
+
     case 'text-edit':
       return bakeTextEdit(page, annotation, rotation, toPdf, rectToPdf, resources);
 
@@ -394,6 +418,60 @@ async function bakeText(
       rotate: degrees(rotation),
     });
   });
+}
+
+/**
+ * Bakes a rich text box: each block is one line; spans advance along the
+ * line using the metrics of their Helvetica variant, and underline/strike
+ * decorations are drawn as thin lines relative to the baseline.
+ */
+async function bakeRichText(
+  page: PDFPage,
+  annotation: RichTextAnnotation,
+  rotation: Rotation,
+  toPdf: (p: Point) => Point,
+  resources: DrawResources,
+): Promise<void> {
+  const { rect, fontSize } = annotation;
+  const color = hexToRgb(annotation.color);
+  const lineHeight = textLineHeight(fontSize);
+  const decorationThickness = Math.max(fontSize / 16, 0.6);
+
+  for (const [lineIndex, block] of annotation.blocks.entries()) {
+    // Baseline of this line, in display space.
+    const baselineY = rect.y + TEXT_PADDING + fontSize * TEXT_ASCENT_FACTOR + lineIndex * lineHeight;
+    let advanceX = rect.x + TEXT_PADDING;
+
+    for (const span of block.spans) {
+      const font = await resources.getFont(spanVariant(span));
+      const text = resources.sanitize(font, span.text);
+      if (text === '') continue;
+      const width = font.widthOfTextAtSize(text, fontSize);
+      const baseline = toPdf({ x: advanceX, y: baselineY });
+      page.drawText(text, {
+        x: baseline.x,
+        y: baseline.y,
+        size: fontSize,
+        font,
+        color,
+        rotate: degrees(rotation),
+      });
+
+      const decorations: number[] = [];
+      if (span.underline) decorations.push(baselineY + fontSize * 0.12);
+      if (span.strike) decorations.push(baselineY - fontSize * 0.28);
+      for (const y of decorations) {
+        page.drawLine({
+          start: toPdf({ x: advanceX, y }),
+          end: toPdf({ x: advanceX + width, y }),
+          thickness: decorationThickness,
+          color,
+        });
+      }
+
+      advanceX += width;
+    }
+  }
 }
 
 /**

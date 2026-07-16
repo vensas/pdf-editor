@@ -73,6 +73,7 @@ export type Tool =
   | 'edit-text'
   | 'remove-object'
   | 'text'
+  | 'richtext'
   | 'ink'
   | 'highlight'
   | 'rectangle'

@@ -39,6 +39,7 @@ const TOOLS: { tool: Tool; icon: IconName; label: string; key: string }[] = [
   { tool: 'edit-text', icon: 'editText', label: 'Edit text', key: 'E' },
   { tool: 'remove-object', icon: 'removeObject', label: 'Remove object', key: 'X' },
   { tool: 'text', icon: 'text', label: 'Text', key: 'T' },
+  { tool: 'richtext', icon: 'richText', label: 'Rich text', key: 'B' },
   { tool: 'ink', icon: 'pen', label: 'Draw', key: 'P' },
   { tool: 'highlight', icon: 'highlighter', label: 'Highlight', key: 'H' },
   { tool: 'rectangle', icon: 'square', label: 'Rectangle', key: 'R' },

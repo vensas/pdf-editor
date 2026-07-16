@@ -11,6 +11,7 @@ const PATHS = {
     'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6M12 12v6m-3-3h6',
   cursor: 'm5 3 14 7-6.5 1.5L9 18 5 3Z',
   text: 'M5 6V4h14v2M12 4v16m-3 0h6',
+  richText: 'M5 6V4h14v2M12 4v13m-3 0h6M5 20h14',
   pen: 'M12 19c2-6 6-9 8-9-1 4-4 8-8 9Zm0 0c-2 0-6-1-8-4 3-1 6 0 8 4ZM12 19c-1-6 0-11 2-15',
   highlighter: 'm9 11 4 4L20 8l-4-4-7 7Zm0 0-3 3 2 2-4 4h6l1-1 2-2',
   square: 'M4 5h16v14H4z',
@@ -45,6 +46,10 @@ const PATHS = {
   blankPage: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6',
   editText: 'M4 7V5h11v2M9 5v13m-2 0h4M14 21l6-6-2-2-6 6-.5 2.5 2.5-.5Z',
   removeObject: 'M5 5h14v14H5zM4 4l16 16',
+  formatBold: 'M7 5h6a3.5 3.5 0 0 1 0 7H7V5Zm0 7h7a3.5 3.5 0 0 1 0 7H7v-7Z',
+  formatItalic: 'M10 4h8M6 20h8m0-16-4 16',
+  formatUnderline: 'M6 4v6a6 6 0 0 0 12 0V4M5 20h14',
+  formatStrike: 'M16 6c-.7-1.5-2.2-2.4-4-2.4-2.2 0-4 1.3-4 3s1.5 2.6 4 3.4M8 18c.7 1.5 2.2 2.4 4 2.4 2.2 0 4-1.3 4-3 0-.8-.4-1.5-1-2M4 12h16',
 } as const;
 
 export type IconName = keyof typeof PATHS;

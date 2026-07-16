@@ -726,6 +726,39 @@ button:disabled {
   box-sizing: border-box;
 }
 
+.rich-text-editor {
+  position: absolute;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--accent) 10%, rgb(255 255 255 / 0.92));
+  border: 1px dashed var(--accent-strong);
+  border-radius: 2px;
+}
+
+.rich-text-toolbar {
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  margin-bottom: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+}
+
+.rich-text-content .ProseMirror {
+  font-family: Helvetica, Arial, sans-serif;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rich-text-content .ProseMirror p {
+  margin: 0;
+}
+
 .canvas-controls {
   display: flex;
   align-items: center;

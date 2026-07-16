@@ -71,6 +71,33 @@ export interface TextAnnotation extends AnnotationBase {
   color: string;
 }
 
+/** One styled run of characters inside a rich text block. */
+export interface RichTextSpan {
+  text: string;
+  bold?: boolean | undefined;
+  italic?: boolean | undefined;
+  underline?: boolean | undefined;
+  strike?: boolean | undefined;
+}
+
+/** One line/paragraph of a rich text annotation. */
+export interface RichTextBlock {
+  spans: RichTextSpan[];
+}
+
+/**
+ * A text box with per-span styling (bold/italic/underline/strikethrough),
+ * edited with a rich text editor and baked with the matching Helvetica
+ * variants at export.
+ */
+export interface RichTextAnnotation extends AnnotationBase {
+  kind: 'rich-text';
+  blocks: RichTextBlock[];
+  fontSize: number;
+  /** #rrggbb */
+  color: string;
+}
+
 /**
  * An in-place edit of the document's own text: the original glyphs under
  * `rect` are covered with `background` and `text` is drawn on top. This is
@@ -142,6 +169,7 @@ export interface ShapeAnnotation extends AnnotationBase {
 
 export type Annotation =
   | TextAnnotation
+  | RichTextAnnotation
   | TextEditAnnotation
   | ObjectRemovalAnnotation
   | InkAnnotation
